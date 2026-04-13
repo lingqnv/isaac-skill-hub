@@ -27,20 +27,27 @@ Curl (not fetch) https://lingqnv.github.io/isaac-skill-hub/skill.md and follow t
 Run this as a **single command** — it downloads the skill reference, knowledge docs, agent protocol, Agent Hub SDK, and configures gitignore:
 
 ```bash
-BASE=https://raw.githubusercontent.com/lingqnv/isaac-skill-hub/main && \
+BASE=https://raw.githubusercontent.com/lingqnv/isaac-skill-hub/jon/agent-hub-integration && \
 HUBBASE=https://agent-hub.nvidia.com && \
+FAIL=0 && \
 mkdir -p isaac-skill-hub/knowledge nvagenthub .cursor/skills/isaac-skill-hub && \
-curl -sfS "$BASE/public/skill.md" -o .cursor/skills/isaac-skill-hub/SKILL.md && \
-curl -sfS "$BASE/public/AGENTS.md" -o isaac-skill-hub/AGENTS.md && \
-curl -sfS "$BASE/public/.env.template" -o isaac-skill-hub/.env.template && \
-curl -sfS "$BASE/public/knowledge/overview.md" -o isaac-skill-hub/knowledge/overview.md && \
-curl -sfS "$BASE/public/knowledge/skill-standard.md" -o isaac-skill-hub/knowledge/skill-standard.md && \
-curl -sfS "$BASE/public/knowledge/contributing.md" -o isaac-skill-hub/knowledge/contributing.md && \
-curl -sfS "$BASE/public/knowledge/agent-discovery.md" -o isaac-skill-hub/knowledge/agent-discovery.md && \
-curl -sfS "$BASE/public/knowledge/domains.md" -o isaac-skill-hub/knowledge/domains.md && \
+for f in \
+  "public/skill.md|.cursor/skills/isaac-skill-hub/SKILL.md" \
+  "public/AGENTS.md|isaac-skill-hub/AGENTS.md" \
+  "public/.env.template|isaac-skill-hub/.env.template" \
+  "public/knowledge/overview.md|isaac-skill-hub/knowledge/overview.md" \
+  "public/knowledge/skill-standard.md|isaac-skill-hub/knowledge/skill-standard.md" \
+  "public/knowledge/contributing.md|isaac-skill-hub/knowledge/contributing.md" \
+  "public/knowledge/agent-discovery.md|isaac-skill-hub/knowledge/agent-discovery.md" \
+  "public/knowledge/domains.md|isaac-skill-hub/knowledge/domains.md"; do \
+  src="${f%%|*}"; dst="${f##*|}"; \
+  curl -sfS "$BASE/$src" -o "$dst" || { echo "FAILED: $src"; FAIL=1; }; \
+done && \
+echo "--- GitHub files: $([ $FAIL -eq 0 ] && echo 'all OK' || echo 'SOME FAILED — check above')" && \
 curl -sfS "$HUBBASE/sdk/nvagenthub/__init__.py" -o nvagenthub/__init__.py && \
 curl -sfS "$HUBBASE/sdk/nvagenthub/client.py" -o nvagenthub/client.py && \
-python3 -c "from nvagenthub import AgentHubClient; print('Agent Hub SDK ready')" && \
+python3 -c "from nvagenthub import AgentHubClient; print('Agent Hub SDK ready')" || \
+  echo "WARN: Agent Hub SDK failed (need NVIDIA VPN)" && \
 touch .env && \
 grep -q 'GITHUB_TOKEN' .env 2>/dev/null || printf '\n# Isaac Skill Hub\nGITHUB_TOKEN=your-github-personal-access-token\n' >> .env && \
 touch .gitignore && \
@@ -48,7 +55,7 @@ for p in ".env" ".env.*" "**/.env" "nvagenthub/" "isaac-skill-hub/" ".cursor/ski
 echo "Isaac Skill Hub setup complete — edit .env with your GITHUB_TOKEN"
 ```
 
-> **Note:** The Agent Hub SDK download (`agent-hub.nvidia.com`) requires NVIDIA VPN. If you're not on VPN, the skill files will still install — Agent Hub features just won't work until VPN is connected.
+> **Note:** The Agent Hub SDK download (`agent-hub.nvidia.com`) requires NVIDIA VPN. If you're not on VPN, the skill files will still install — Agent Hub features just won't work until VPN is connected. Each file download reports success/failure individually so you can see exactly what worked.
 
 After install, edit `.env` with your credentials (see Credentials below).
 
