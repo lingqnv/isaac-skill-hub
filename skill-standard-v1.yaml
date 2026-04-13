@@ -1,0 +1,173 @@
+# ============================================================================
+# ISAAC SKILL STANDARD v1.0
+# Open specification for packaging and distributing robotics skills
+# ============================================================================
+#
+# This is a reference skill.yaml showing all fields.
+# Required fields are marked [REQUIRED], others are optional.
+#
+
+# --- Identity ---
+name: "nav-slam-lidar"                         # [REQUIRED] Unique identifier (lowercase, hyphens)
+display_name: "LiDAR SLAM Navigation"          # [REQUIRED] Human-readable name
+version: "1.2.0"                               # [REQUIRED] Semantic version
+description: >                                 # [REQUIRED] One-paragraph description
+  Real-time SLAM navigation skill using LiDAR point clouds.
+  Supports 2D and 3D mapping with loop closure detection.
+  Optimized for warehouse and logistics environments.
+
+# --- Authorship ---
+author:
+  name: "Jane Roboticist"                      # [REQUIRED]
+  email: "jane@example.com"
+  organization: "RoboLabs Inc."
+  url: "https://github.com/janerobo"
+contributors:
+  - name: "Bob Builder"
+    email: "bob@robolabs.com"
+    role: "maintainer"
+
+# --- Classification ---
+domain: "navigation"                           # [REQUIRED] Primary domain
+  # One of: navigation, manipulation, perception,
+  #         data_training, simulation, control, safety, integration
+tags:                                          # Secondary classifications
+  - "slam"
+  - "lidar"
+  - "mapping"
+  - "warehouse"
+  - "logistics"
+
+# --- Compatibility ---
+compatibility:
+  isaac_sdk: ">=3.0.0, <4.0.0"               # [REQUIRED] Isaac SDK version range
+  ros:                                         # ROS compatibility
+    - "ros2-humble"
+    - "ros2-iron"
+  python: ">=3.9"
+  platforms:                                   # Supported hardware
+    - name: "NVIDIA Jetson Orin"
+      type: "edge"
+    - name: "x86_64 + RTX 4090"
+      type: "workstation"
+  isaac_sim: ">=4.0.0"                        # Isaac Sim version (if sim-capable)
+
+# --- Interfaces ---
+inputs:
+  - name: "lidar_scan"
+    type: "sensor_msgs/LaserScan"             # ROS message type or custom
+    description: "2D or 3D LiDAR scan data"
+    required: true
+  - name: "odometry"
+    type: "nav_msgs/Odometry"
+    description: "Robot odometry for motion estimation"
+    required: true
+  - name: "initial_pose"
+    type: "geometry_msgs/PoseWithCovarianceStamped"
+    description: "Optional initial pose estimate"
+    required: false
+
+outputs:
+  - name: "map"
+    type: "nav_msgs/OccupancyGrid"
+    description: "Generated occupancy grid map"
+  - name: "localized_pose"
+    type: "geometry_msgs/PoseStamped"
+    description: "Current robot pose in map frame"
+  - name: "path"
+    type: "nav_msgs/Path"
+    description: "Planned path to goal"
+
+# --- Parameters ---
+parameters:
+  - name: "map_resolution"
+    type: "float"
+    default: 0.05
+    range: [0.01, 1.0]
+    unit: "meters"
+    description: "Grid cell resolution in meters"
+  - name: "max_range"
+    type: "float"
+    default: 30.0
+    unit: "meters"
+    description: "Maximum LiDAR range to consider"
+  - name: "loop_closure_enabled"
+    type: "bool"
+    default: true
+    description: "Enable loop closure detection"
+
+# --- Execution ---
+execution:
+  context: "hybrid"                            # [REQUIRED] sim | real | hybrid
+  entry_point: "src/slam_nav.py"              # [REQUIRED] Main executable
+  runtime: "python"                            # python | cpp | ros2_node
+  launch_file: "launch/slam_nav.launch.py"    # Optional ROS2 launch file
+  resources:
+    gpu_required: true
+    min_gpu_memory: "4GB"
+    min_ram: "8GB"
+    min_cpu_cores: 4
+
+# --- Dependencies ---
+dependencies:
+  skills:                                      # Other Isaac skills
+    - name: "perception-pointcloud-filter"
+      version: ">=1.0.0"
+  packages:                                    # System/pip/apt packages
+    - name: "open3d"
+      type: "pip"
+      version: ">=0.17.0"
+    - name: "numpy"
+      type: "pip"
+      version: ">=1.24.0"
+
+# --- Testing & Validation ---
+testing:
+  test_dir: "tests/"                          # Directory containing tests
+  test_command: "pytest tests/ -v"            # How to run tests
+  sim_test:                                    # Automated Isaac Sim testing
+    enabled: true
+    scene: "tests/warehouse_scene.usd"
+    success_criteria:
+      - metric: "map_coverage"
+        threshold: 0.85
+        operator: ">="
+      - metric: "localization_rmse"
+        threshold: 0.15
+        operator: "<="
+        unit: "meters"
+      - metric: "completion_time"
+        threshold: 120
+        operator: "<="
+        unit: "seconds"
+
+# --- Documentation ---
+documentation:
+  readme: "README.md"                          # [REQUIRED]
+  examples:
+    - "examples/basic_slam.py"
+    - "examples/multi_floor.py"
+  tutorials:
+    - title: "Getting Started with SLAM Navigation"
+      url: "docs/tutorial_basic.md"
+  changelog: "CHANGELOG.md"
+  api_reference: "docs/api.md"
+
+# --- Licensing ---
+license: "Apache-2.0"                         # [REQUIRED] SPDX identifier
+
+# --- Hub Metadata (set by hub, not by author) ---
+# These fields are populated by the Isaac Skill Hub upon publication.
+# Authors should NOT set these.
+#
+# hub:
+#   published_at: "2026-03-15T10:30:00Z"
+#   hub_score: 87
+#   downloads_total: 12450
+#   downloads_30d: 1890
+#   active_deployments: 342
+#   rating: 4.6
+#   review_count: 28
+#   validation_badge: true
+#   certified_badge: false
+#   maintenance_status: "active"
