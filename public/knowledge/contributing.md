@@ -4,8 +4,10 @@
 
 ### 1. Create the directory
 
+Skills live in `example-skills/` during early access. Place your skill there:
+
 ```
-skills/<domain>/my-skill/
+example-skills/my-skill/
 ├── SKILL.md          # Required — frontmatter + docs
 ├── LICENSE.txt        # Required — Apache 2.0 recommended
 ├── scripts/
@@ -14,6 +16,10 @@ skills/<domain>/my-skill/
 ├── examples/          # Optional — usage examples
 └── references/        # Optional — deep documentation
 ```
+
+> **Note:** The directory will move to `skills/<domain>/my-skill/` after GA. During early access, all skills go in `example-skills/`.
+
+**Reference implementation:** See `example-skills/nav-slam-lidar/SKILL.md` for a gold-standard example with typed I/O, parameters with ranges, platform compatibility, and validation criteria.
 
 ### 2. Write the SKILL.md
 
@@ -33,17 +39,45 @@ Strongly recommended — makes your skill composable:
 - `platforms` for hardware compatibility
 - `validation` criteria for automated testing
 
-### 4. Submit via GitHub PR
+### 4. Validate your skill
+
+Run the validation script to check SKILL.md frontmatter before submitting:
 
 ```bash
-git checkout -b add-my-skill
-git add skills/<domain>/my-skill
-git commit -m "Add my-skill: brief description"
-git push origin add-my-skill
-# Open PR on GitHub
+python3 public/validate_skill.py example-skills/my-skill/SKILL.md
 ```
 
-PR title format: `[skill] Add <skill-name>: one-line description`
+This checks: required fields present, SPDX license valid, domain is recognized, execution context valid, typed I/O format correct, parameter ranges well-formed.
+
+### 5. Submit via GitHub PR
+
+Fork the repo, create your skill, then open a PR:
+
+```bash
+# Fork via GitHub UI or gh CLI
+gh repo fork lingqnv/isaac-skill-hub --clone
+cd isaac-skill-hub
+
+# Create your skill
+git checkout -b add-my-skill
+mkdir -p example-skills/my-skill/scripts
+# ... author SKILL.md, LICENSE.txt, scripts/ ...
+
+# Validate
+python3 public/validate_skill.py example-skills/my-skill/SKILL.md
+
+# Commit and PR
+git add example-skills/my-skill
+git commit -m "[skill] Add my-skill: brief description"
+git push origin add-my-skill
+
+# Open PR targeting the active branch
+gh pr create --repo lingqnv/isaac-skill-hub --base jon/agent-hub-integration \
+  --title "[skill] Add my-skill: one-line description" \
+  --body "## Summary\n- Domain: ...\n- Execution: hybrid/sim/real\n- Key capability: ..."
+```
+
+> **PR target branch:** During early access, target `jon/agent-hub-integration`. After GA, target `main`.
 
 ## Contributor Tiers
 
@@ -57,10 +91,8 @@ PR title format: `[skill] Add <skill-name>: one-line description`
 ## Review Process
 
 Automated checks on every PR:
-- SKILL.md schema conformance
-- Required files present
-- Dependency resolution
-- Test execution
+- SKILL.md frontmatter validation (via `validate_skill.py`)
+- Required files present (SKILL.md + LICENSE.txt)
 - License compatibility
 - Documentation completeness
 

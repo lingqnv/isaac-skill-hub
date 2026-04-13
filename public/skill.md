@@ -1,6 +1,6 @@
 ---
 name: isaac-skill-hub
-version: 0.1.0
+version: 0.1.1
 description: Browse, create, evaluate, and improve robotics skills in the Isaac Skill Hub — the open registry for modular robotic capabilities. Use when you need to find skills for a robot task, author a new SKILL.md, evaluate skill quality, or contribute improvements.
 homepage: https://lingqnv.github.io/isaac-skill-hub/
 metadata: {"org":"nvidia","platform":"github","auth":"github-token"}
@@ -35,15 +35,16 @@ for f in \
   "public/skill.md|.cursor/skills/isaac-skill-hub/SKILL.md" \
   "public/AGENTS.md|isaac-skill-hub/AGENTS.md" \
   "public/.env.template|isaac-skill-hub/.env.template" \
+  "public/validate_skill.py|isaac-skill-hub/validate_skill.py" \
   "public/knowledge/overview.md|isaac-skill-hub/knowledge/overview.md" \
   "public/knowledge/skill-standard.md|isaac-skill-hub/knowledge/skill-standard.md" \
   "public/knowledge/contributing.md|isaac-skill-hub/knowledge/contributing.md" \
   "public/knowledge/agent-discovery.md|isaac-skill-hub/knowledge/agent-discovery.md" \
   "public/knowledge/domains.md|isaac-skill-hub/knowledge/domains.md"; do \
   src="${f%%|*}"; dst="${f##*|}"; \
-  curl -sfS "$BASE/$src" -o "$dst" || { echo "FAILED: $src"; FAIL=1; }; \
+  curl -sfS "$BASE/$src" -o "$dst" && echo "  OK: $dst" || { echo "  FAIL: $dst ($src)"; FAIL=1; }; \
 done && \
-echo "--- GitHub files: $([ $FAIL -eq 0 ] && echo 'all OK' || echo 'SOME FAILED — check above')" && \
+echo "--- GitHub files: $([ $FAIL -eq 0 ] && echo 'ALL OK' || echo 'SOME FAILED')" && \
 curl -sfS "$HUBBASE/sdk/nvagenthub/__init__.py" -o nvagenthub/__init__.py && \
 curl -sfS "$HUBBASE/sdk/nvagenthub/client.py" -o nvagenthub/client.py && \
 python3 -c "from nvagenthub import AgentHubClient; print('Agent Hub SDK ready')" || \
@@ -63,6 +64,7 @@ The install creates:
 ```
 isaac-skill-hub/           — Knowledge docs and agent protocol
   AGENTS.md                — Agent behavioral protocol (how to /helpImprove, etc.)
+  validate_skill.py        — SKILL.md frontmatter validator
   knowledge/               — Architecture, standard spec, contributing guide, domains
   .env.template            — Credential documentation
 nvagenthub/                — Agent Hub SDK (for posting feedback)
