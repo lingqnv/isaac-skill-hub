@@ -1,285 +1,147 @@
-import { useState, useMemo, useCallback } from "react";
-import { Search, Star, Download, Shield, CheckCircle, ChevronDown, ArrowUpRight, Users, TrendingUp, Package, Filter, X, Award, Clock, GitFork, Heart, BarChart3, Zap, Eye, BookOpen, Plus, ArrowLeft, ExternalLink, Github, Code, FileText, Terminal } from "lucide-react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { Search, Star, Download, CheckCircle, ArrowUpRight, X, Award, ArrowLeft, Github, Terminal, ChevronRight, Activity, Box, Plus, BookOpen, FileText, Filter, MessageSquare, Shield, Cpu, Layers, Play, ExternalLink, AlertTriangle, Zap, ArrowRight } from "lucide-react";
 
-// ─── SAMPLE DATA ───────────────────────────────────────────────────────────────
+// ─── DATA ──────────────────────────────────────────────────────────────────────
 
 const DOMAINS = [
-  { id: "navigation", label: "Navigation", icon: "🧭", color: "bg-blue-500" },
-  { id: "manipulation", label: "Manipulation", icon: "🦾", color: "bg-purple-500" },
-  { id: "perception", label: "Perception", icon: "👁️", color: "bg-green-500" },
-  { id: "data_training", label: "Data & Training", icon: "📊", color: "bg-orange-500" },
-  { id: "simulation", label: "Simulation", icon: "🌐", color: "bg-cyan-500" },
-  { id: "control", label: "Control", icon: "🎛️", color: "bg-red-500" },
-  { id: "safety", label: "Safety", icon: "🛡️", color: "bg-yellow-500" },
-  { id: "integration", label: "Integration", icon: "🔌", color: "bg-pink-500" },
+  { id: "navigation", label: "Navigation" },
+  { id: "manipulation", label: "Manipulation" },
+  { id: "perception", label: "Perception" },
+  { id: "data_training", label: "Data & Training" },
+  { id: "simulation", label: "Simulation" },
+  { id: "control", label: "Control" },
+  { id: "safety", label: "Safety" },
+  { id: "integration", label: "Integration" },
 ];
 
 const SKILLS = [
-  {
-    id: 1, name: "nav-slam-lidar", displayName: "LiDAR SLAM Navigation",
-    description: "Real-time SLAM navigation using LiDAR point clouds. Supports 2D and 3D mapping with loop closure detection. Optimized for warehouse and logistics environments.",
-    domain: "navigation", tags: ["slam", "lidar", "mapping", "warehouse"],
-    author: { name: "Jane Chen", org: "NVIDIA", avatar: "JC", tier: "core" },
-    version: "1.2.0", license: "Apache-2.0",
-    hubScore: 94, rating: 4.8, reviewCount: 47, downloads: 18420, downloads30d: 2340,
-    activeDeployments: 512, workflowCompletions: 0.96,
-    validationBadge: true, certifiedBadge: true, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=3.0", ros: ["humble", "iron"], platforms: ["Jetson Orin", "x86_64"] },
-    updatedAt: "2026-04-02", publishedAt: "2025-08-15", contributors: 8,
-    dependencies: 3, dependents: 12,
-  },
-  {
-    id: 2, name: "grasp-6dof-transformer", displayName: "6-DOF Grasp Planner",
-    description: "Transformer-based 6-DOF grasp pose prediction from point clouds. Handles novel objects with zero-shot generalization. Integrated with MoveIt2 for motion planning.",
-    domain: "manipulation", tags: ["grasping", "transformer", "6dof", "point-cloud"],
-    author: { name: "Alex Kim", org: "RoboLabs", avatar: "AK", tier: "verified" },
-    version: "2.0.1", license: "MIT",
-    hubScore: 91, rating: 4.7, reviewCount: 34, downloads: 14200, downloads30d: 1980,
-    activeDeployments: 389, workflowCompletions: 0.92,
-    validationBadge: true, certifiedBadge: true, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=3.0", ros: ["humble"], platforms: ["x86_64 + RTX 4090", "Jetson Orin"] },
-    updatedAt: "2026-03-28", publishedAt: "2025-11-01", contributors: 5,
-    dependencies: 4, dependents: 8,
-  },
-  {
-    id: 3, name: "perception-yolo-ros2", displayName: "YOLO Object Detection (ROS2)",
-    description: "Production-ready YOLO v8/v9 object detection wrapped as a ROS2 node. Auto-selects model variant based on available GPU memory. Includes custom training pipeline.",
-    domain: "perception", tags: ["yolo", "detection", "ros2", "real-time"],
-    author: { name: "Maria Santos", org: "Community", avatar: "MS", tier: "verified" },
-    version: "3.1.0", license: "Apache-2.0",
-    hubScore: 89, rating: 4.6, reviewCount: 62, downloads: 31200, downloads30d: 4100,
-    activeDeployments: 890, workflowCompletions: 0.98,
-    validationBadge: true, certifiedBadge: false, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=2.5", ros: ["humble", "iron", "jazzy"], platforms: ["Jetson Orin", "Jetson AGX", "x86_64"] },
-    updatedAt: "2026-04-05", publishedAt: "2025-06-20", contributors: 14,
-    dependencies: 2, dependents: 23,
-  },
-  {
-    id: 4, name: "domain-rand-factory", displayName: "Domain Randomization Factory",
-    description: "Automated domain randomization for sim-to-real transfer. Configurable randomization of textures, lighting, physics, and camera parameters. Curriculum-aware difficulty scaling.",
-    domain: "data_training", tags: ["domain-randomization", "sim2real", "training", "curriculum"],
-    author: { name: "Isaac Team", org: "NVIDIA", avatar: "IT", tier: "core" },
-    version: "1.5.0", license: "Apache-2.0",
-    hubScore: 88, rating: 4.5, reviewCount: 29, downloads: 9800, downloads30d: 1450,
-    activeDeployments: 234, workflowCompletions: 0.94,
-    validationBadge: true, certifiedBadge: true, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=3.0", ros: [], platforms: ["x86_64 + RTX 3090+"] },
-    updatedAt: "2026-03-20", publishedAt: "2025-09-10", contributors: 6,
-    dependencies: 5, dependents: 7,
-  },
-  {
-    id: 5, name: "isaac-sim-warehouse", displayName: "Warehouse Environment Generator",
-    description: "Procedural warehouse environment generation for Isaac Sim. Configurable rack layouts, dynamic obstacles, worker agents, and lighting conditions.",
-    domain: "simulation", tags: ["warehouse", "procedural", "environment", "isaac-sim"],
-    author: { name: "Tom Park", org: "NVIDIA", avatar: "TP", tier: "core" },
-    version: "2.1.0", license: "Apache-2.0",
-    hubScore: 86, rating: 4.7, reviewCount: 21, downloads: 7600, downloads30d: 1120,
-    activeDeployments: 178, workflowCompletions: 0.97,
-    validationBadge: true, certifiedBadge: true, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=3.0", ros: [], platforms: ["x86_64 + RTX 4070+"] },
-    updatedAt: "2026-03-15", publishedAt: "2025-10-05", contributors: 4,
-    dependencies: 2, dependents: 9,
-  },
-  {
-    id: 6, name: "pid-auto-tuner", displayName: "Adaptive PID Auto-Tuner",
-    description: "Automatic PID controller tuning using Bayesian optimization. Supports cascade, feedforward, and multi-axis configurations. Real-time adaptation during operation.",
-    domain: "control", tags: ["pid", "auto-tune", "bayesian", "adaptive"],
-    author: { name: "Raj Patel", org: "ControlSys", avatar: "RP", tier: "verified" },
-    version: "1.0.3", license: "MIT",
-    hubScore: 82, rating: 4.4, reviewCount: 18, downloads: 5400, downloads30d: 780,
-    activeDeployments: 145, workflowCompletions: 0.91,
-    validationBadge: true, certifiedBadge: false, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=2.5", ros: ["humble"], platforms: ["Jetson Orin", "x86_64"] },
-    updatedAt: "2026-04-01", publishedAt: "2026-01-15", contributors: 3,
-    dependencies: 1, dependents: 4,
-  },
-  {
-    id: 7, name: "safety-zone-monitor", displayName: "Dynamic Safety Zone Monitor",
-    description: "Real-time safety zone monitoring using 3D occupancy grids. ISO 13482 compliant. Configurable zones with velocity-dependent boundaries and emergency stop triggers.",
-    domain: "safety", tags: ["safety", "iso-13482", "monitoring", "e-stop"],
-    author: { name: "SafeBot Team", org: "SafeBot GmbH", avatar: "SB", tier: "certified" },
-    version: "1.3.2", license: "Apache-2.0",
-    hubScore: 85, rating: 4.9, reviewCount: 15, downloads: 4200, downloads30d: 890,
-    activeDeployments: 267, workflowCompletions: 0.99,
-    validationBadge: true, certifiedBadge: true, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=3.0", ros: ["humble", "iron"], platforms: ["Jetson Orin", "x86_64"] },
-    updatedAt: "2026-03-30", publishedAt: "2025-12-01", contributors: 4,
-    dependencies: 2, dependents: 11,
-  },
-  {
-    id: 8, name: "ros2-cloud-bridge", displayName: "ROS2 Cloud Bridge",
-    description: "Bidirectional bridge between ROS2 and cloud services. Supports AWS RoboMaker, Azure IoT, and NVIDIA Fleet Command. Automatic reconnection and message queuing.",
-    domain: "integration", tags: ["ros2", "cloud", "aws", "azure", "fleet"],
-    author: { name: "CloudRobo", org: "Community", avatar: "CR", tier: "community" },
-    version: "0.9.1", license: "MIT",
-    hubScore: 74, rating: 4.2, reviewCount: 11, downloads: 3100, downloads30d: 520,
-    activeDeployments: 89, workflowCompletions: 0.88,
-    validationBadge: true, certifiedBadge: false, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=2.5", ros: ["humble", "iron"], platforms: ["x86_64", "Jetson Orin"] },
-    updatedAt: "2026-04-07", publishedAt: "2026-02-10", contributors: 2,
-    dependencies: 3, dependents: 2,
-  },
-  {
-    id: 9, name: "multi-robot-coord", displayName: "Multi-Robot Coordinator",
-    description: "Decentralized multi-robot task allocation and coordination. Conflict-free path planning for up to 100 robots. Supports heterogeneous fleets.",
-    domain: "navigation", tags: ["multi-robot", "coordination", "fleet", "task-allocation"],
-    author: { name: "Fleet Labs", org: "Community", avatar: "FL", tier: "verified" },
-    version: "1.1.0", license: "Apache-2.0",
-    hubScore: 83, rating: 4.5, reviewCount: 22, downloads: 6700, downloads30d: 1100,
-    activeDeployments: 56, workflowCompletions: 0.90,
-    validationBadge: true, certifiedBadge: false, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=3.0", ros: ["humble"], platforms: ["x86_64"] },
-    updatedAt: "2026-03-25", publishedAt: "2025-11-20", contributors: 7,
-    dependencies: 4, dependents: 3,
-  },
-  {
-    id: 10, name: "pose-estimation-foundationpose", displayName: "FoundationPose Estimator",
-    description: "6-DOF pose estimation using FoundationPose. Zero-shot on novel objects with only RGB-D input. Real-time inference on Jetson Orin.",
-    domain: "perception", tags: ["pose-estimation", "6dof", "foundation-model", "zero-shot"],
-    author: { name: "Vision Team", org: "NVIDIA", avatar: "VT", tier: "core" },
-    version: "2.0.0", license: "Apache-2.0",
-    hubScore: 92, rating: 4.8, reviewCount: 38, downloads: 15800, downloads30d: 2800,
-    activeDeployments: 445, workflowCompletions: 0.95,
-    validationBadge: true, certifiedBadge: true, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=3.0", ros: ["humble"], platforms: ["Jetson Orin", "x86_64 + RTX 3090+"] },
-    updatedAt: "2026-04-06", publishedAt: "2025-07-01", contributors: 9,
-    dependencies: 3, dependents: 15,
-  },
-  {
-    id: 11, name: "rl-locomotion-anymal", displayName: "RL Locomotion Policy (ANYmal-style)",
-    description: "Reinforcement learning locomotion policies for quadruped robots. Trained in Isaac Sim with automatic curriculum. Supports rough terrain, stairs, and dynamic obstacles.",
-    domain: "control", tags: ["reinforcement-learning", "locomotion", "quadruped", "legged"],
-    author: { name: "Leo Müller", org: "ETH Robotics", avatar: "LM", tier: "certified" },
-    version: "1.4.0", license: "MIT",
-    hubScore: 87, rating: 4.6, reviewCount: 26, downloads: 8900, downloads30d: 1300,
-    activeDeployments: 167, workflowCompletions: 0.93,
-    validationBadge: true, certifiedBadge: true, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=3.0", ros: ["humble"], platforms: ["x86_64 + RTX 4080+"] },
-    updatedAt: "2026-03-18", publishedAt: "2025-10-20", contributors: 5,
-    dependencies: 6, dependents: 4,
-  },
-  {
-    id: 12, name: "synthetic-data-annotator", displayName: "Synthetic Data Auto-Annotator",
-    description: "Automatic annotation generation for synthetic datasets. Bounding boxes, segmentation masks, depth maps, and 6-DOF poses. Customizable annotation formats (COCO, KITTI, custom).",
-    domain: "data_training", tags: ["annotation", "synthetic-data", "labeling", "coco", "kitti"],
-    author: { name: "DataForge", org: "Community", avatar: "DF", tier: "verified" },
-    version: "1.2.1", license: "Apache-2.0",
-    hubScore: 80, rating: 4.3, reviewCount: 19, downloads: 6200, downloads30d: 950,
-    activeDeployments: 198, workflowCompletions: 0.94,
-    validationBadge: true, certifiedBadge: false, maintenanceStatus: "active",
-    compatibility: { isaac_sdk: ">=2.5", ros: [], platforms: ["x86_64"] },
-    updatedAt: "2026-03-22", publishedAt: "2025-12-15", contributors: 4,
-    dependencies: 3, dependents: 6,
-  },
+  { id: 1, name: "nav-slam-lidar", displayName: "LiDAR SLAM Navigation", description: "Real-time SLAM navigation using LiDAR point clouds. Supports 2D/3D mapping with loop closure. Optimized for warehouse environments.", domain: "navigation", tags: ["slam", "lidar", "mapping"], author: { name: "Jane Chen", org: "NVIDIA", tier: "core" }, version: "1.2.0", license: "Apache-2.0", hubScore: 94, rating: 4.8, reviewCount: 47, downloads: 18420, downloads30d: 2340, activeDeployments: 512, workflowCompletions: 0.96, validationBadge: true, certifiedBadge: true, compatibility: { isaac_sdk: ">=3.0", ros: ["humble", "iron"], platforms: ["Jetson Orin", "x86_64"] }, updatedAt: "2026-04-02", publishedAt: "2025-08-15", contributors: 8, dependents: 12 },
+  { id: 2, name: "grasp-6dof-transformer", displayName: "6-DOF Grasp Planner", description: "Transformer-based 6-DOF grasp pose prediction from point clouds. Zero-shot generalization on novel objects. MoveIt2 integrated.", domain: "manipulation", tags: ["grasping", "transformer", "6dof"], author: { name: "Alex Kim", org: "RoboLabs", tier: "verified" }, version: "2.0.1", license: "MIT", hubScore: 91, rating: 4.7, reviewCount: 34, downloads: 14200, downloads30d: 1980, activeDeployments: 389, workflowCompletions: 0.92, validationBadge: true, certifiedBadge: true, compatibility: { isaac_sdk: ">=3.0", ros: ["humble"], platforms: ["x86_64 + RTX 4090", "Jetson Orin"] }, updatedAt: "2026-03-28", publishedAt: "2025-11-01", contributors: 5, dependents: 8 },
+  { id: 3, name: "perception-yolo-ros2", displayName: "YOLO Object Detection", description: "Production-ready YOLO v8/v9 object detection as a ROS2 node. Auto-selects model variant based on GPU memory. Custom training included.", domain: "perception", tags: ["yolo", "detection", "ros2"], author: { name: "Maria Santos", org: "Community", tier: "verified" }, version: "3.1.0", license: "Apache-2.0", hubScore: 89, rating: 4.6, reviewCount: 62, downloads: 31200, downloads30d: 4100, activeDeployments: 890, workflowCompletions: 0.98, validationBadge: true, certifiedBadge: false, compatibility: { isaac_sdk: ">=2.5", ros: ["humble", "iron", "jazzy"], platforms: ["Jetson Orin", "Jetson AGX", "x86_64"] }, updatedAt: "2026-04-05", publishedAt: "2025-06-20", contributors: 14, dependents: 23 },
+  { id: 4, name: "domain-rand-factory", displayName: "Domain Randomization Factory", description: "Automated domain randomization for sim-to-real transfer. Configurable textures, lighting, physics. Curriculum-aware difficulty scaling.", domain: "data_training", tags: ["sim2real", "training", "curriculum"], author: { name: "Isaac Team", org: "NVIDIA", tier: "core" }, version: "1.5.0", license: "Apache-2.0", hubScore: 88, rating: 4.5, reviewCount: 29, downloads: 9800, downloads30d: 1450, activeDeployments: 234, workflowCompletions: 0.94, validationBadge: true, certifiedBadge: true, compatibility: { isaac_sdk: ">=3.0", ros: [], platforms: ["x86_64 + RTX 3090+"] }, updatedAt: "2026-03-20", publishedAt: "2025-09-10", contributors: 6, dependents: 7 },
+  { id: 5, name: "isaac-sim-warehouse", displayName: "Warehouse Environment Generator", description: "Procedural warehouse environment generation for Isaac Sim. Configurable rack layouts, dynamic obstacles, worker agents.", domain: "simulation", tags: ["warehouse", "procedural", "isaac-sim"], author: { name: "Tom Park", org: "NVIDIA", tier: "core" }, version: "2.1.0", license: "Apache-2.0", hubScore: 86, rating: 4.7, reviewCount: 21, downloads: 7600, downloads30d: 1120, activeDeployments: 178, workflowCompletions: 0.97, validationBadge: true, certifiedBadge: true, compatibility: { isaac_sdk: ">=3.0", ros: [], platforms: ["x86_64 + RTX 4070+"] }, updatedAt: "2026-03-15", publishedAt: "2025-10-05", contributors: 4, dependents: 9 },
+  { id: 6, name: "pid-auto-tuner", displayName: "Adaptive PID Auto-Tuner", description: "Automatic PID controller tuning using Bayesian optimization. Supports cascade, feedforward, and multi-axis configurations.", domain: "control", tags: ["pid", "auto-tune", "bayesian"], author: { name: "Raj Patel", org: "ControlSys", tier: "verified" }, version: "1.0.3", license: "MIT", hubScore: 82, rating: 4.4, reviewCount: 18, downloads: 5400, downloads30d: 780, activeDeployments: 145, workflowCompletions: 0.91, validationBadge: true, certifiedBadge: false, compatibility: { isaac_sdk: ">=2.5", ros: ["humble"], platforms: ["Jetson Orin", "x86_64"] }, updatedAt: "2026-04-01", publishedAt: "2026-01-15", contributors: 3, dependents: 4 },
+  { id: 7, name: "safety-zone-monitor", displayName: "Dynamic Safety Zone Monitor", description: "Real-time safety zone monitoring with 3D occupancy grids. ISO 13482 compliant. Velocity-dependent boundaries and e-stop triggers.", domain: "safety", tags: ["safety", "iso-13482", "e-stop"], author: { name: "SafeBot Team", org: "SafeBot GmbH", tier: "certified" }, version: "1.3.2", license: "Apache-2.0", hubScore: 85, rating: 4.9, reviewCount: 15, downloads: 4200, downloads30d: 890, activeDeployments: 267, workflowCompletions: 0.99, validationBadge: true, certifiedBadge: true, compatibility: { isaac_sdk: ">=3.0", ros: ["humble", "iron"], platforms: ["Jetson Orin", "x86_64"] }, updatedAt: "2026-03-30", publishedAt: "2025-12-01", contributors: 4, dependents: 11 },
+  { id: 8, name: "ros2-cloud-bridge", displayName: "ROS2 Cloud Bridge", description: "Bidirectional ROS2-to-cloud bridge. Supports AWS RoboMaker, Azure IoT, and NVIDIA Fleet Command. Auto-reconnection and queuing.", domain: "integration", tags: ["ros2", "cloud", "fleet"], author: { name: "CloudRobo", org: "Community", tier: "community" }, version: "0.9.1", license: "MIT", hubScore: 74, rating: 4.2, reviewCount: 11, downloads: 3100, downloads30d: 520, activeDeployments: 89, workflowCompletions: 0.88, validationBadge: true, certifiedBadge: false, compatibility: { isaac_sdk: ">=2.5", ros: ["humble", "iron"], platforms: ["x86_64", "Jetson Orin"] }, updatedAt: "2026-04-07", publishedAt: "2026-02-10", contributors: 2, dependents: 2 },
+  { id: 9, name: "multi-robot-coord", displayName: "Multi-Robot Coordinator", description: "Decentralized multi-robot task allocation. Conflict-free path planning for up to 100 robots. Heterogeneous fleet support.", domain: "navigation", tags: ["multi-robot", "fleet", "coordination"], author: { name: "Fleet Labs", org: "Community", tier: "verified" }, version: "1.1.0", license: "Apache-2.0", hubScore: 83, rating: 4.5, reviewCount: 22, downloads: 6700, downloads30d: 1100, activeDeployments: 56, workflowCompletions: 0.90, validationBadge: true, certifiedBadge: false, compatibility: { isaac_sdk: ">=3.0", ros: ["humble"], platforms: ["x86_64"] }, updatedAt: "2026-03-25", publishedAt: "2025-11-20", contributors: 7, dependents: 3 },
+  { id: 10, name: "pose-estimation-foundationpose", displayName: "FoundationPose Estimator", description: "6-DOF pose estimation using FoundationPose. Zero-shot on novel objects with RGB-D input. Real-time on Jetson Orin.", domain: "perception", tags: ["pose-estimation", "foundation-model", "zero-shot"], author: { name: "Vision Team", org: "NVIDIA", tier: "core" }, version: "2.0.0", license: "Apache-2.0", hubScore: 92, rating: 4.8, reviewCount: 38, downloads: 15800, downloads30d: 2800, activeDeployments: 445, workflowCompletions: 0.95, validationBadge: true, certifiedBadge: true, compatibility: { isaac_sdk: ">=3.0", ros: ["humble"], platforms: ["Jetson Orin", "x86_64 + RTX 3090+"] }, updatedAt: "2026-04-06", publishedAt: "2025-07-01", contributors: 9, dependents: 15 },
+  { id: 11, name: "rl-locomotion-anymal", displayName: "RL Locomotion Policy", description: "Reinforcement learning locomotion for quadruped robots. Trained in Isaac Sim with automatic curriculum. Rough terrain and stairs.", domain: "control", tags: ["reinforcement-learning", "locomotion", "quadruped"], author: { name: "Leo M\u00FCller", org: "ETH Robotics", tier: "certified" }, version: "1.4.0", license: "MIT", hubScore: 87, rating: 4.6, reviewCount: 26, downloads: 8900, downloads30d: 1300, activeDeployments: 167, workflowCompletions: 0.93, validationBadge: true, certifiedBadge: true, compatibility: { isaac_sdk: ">=3.0", ros: ["humble"], platforms: ["x86_64 + RTX 4080+"] }, updatedAt: "2026-03-18", publishedAt: "2025-10-20", contributors: 5, dependents: 4 },
+  { id: 12, name: "synthetic-data-annotator", displayName: "Synthetic Data Auto-Annotator", description: "Automatic annotation for synthetic datasets. Bounding boxes, segmentation masks, depth maps, 6-DOF poses. COCO/KITTI formats.", domain: "data_training", tags: ["annotation", "synthetic-data", "coco"], author: { name: "DataForge", org: "Community", tier: "verified" }, version: "1.2.1", license: "Apache-2.0", hubScore: 80, rating: 4.3, reviewCount: 19, downloads: 6200, downloads30d: 950, activeDeployments: 198, workflowCompletions: 0.94, validationBadge: true, certifiedBadge: false, compatibility: { isaac_sdk: ">=2.5", ros: [], platforms: ["x86_64"] }, updatedAt: "2026-03-22", publishedAt: "2025-12-15", contributors: 4, dependents: 6 },
 ];
 
-const COLLECTIONS = [
-  { id: 1, name: "Getting Started with Mobile Robots", skillCount: 8, icon: "🤖" },
-  { id: 2, name: "Production Manipulation Pipeline", skillCount: 6, icon: "🏭" },
-  { id: 3, name: "Sim-to-Real Transfer Kit", skillCount: 5, icon: "🔄" },
-  { id: 4, name: "GTC 2026 Community Picks", skillCount: 12, icon: "⭐" },
-];
+// ─── STYLES ────────────────────────────────────────────────────────────────────
 
-const STATS = {
-  totalSkills: 247, totalContributors: 89, totalDownloads: "1.2M", totalOrgs: 34,
+const injectStyles = () => {
+  if (document.getElementById("nv-styles")) return;
+  const s = document.createElement("style");
+  s.id = "nv-styles";
+  s.textContent = `
+    @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --nv-black: #000000;
+      --nv-surface: #0a0a0a;
+      --nv-card: #111111;
+      --nv-border: #1c1c1c;
+      --nv-border-subtle: #141414;
+      --nv-white: #ffffff;
+      --nv-gray-100: #f0f0f0;
+      --nv-gray-200: #cccccc;
+      --nv-gray-400: #888888;
+      --nv-gray-500: #666666;
+      --nv-gray-600: #444444;
+      --nv-gray-800: #1a1a1a;
+      --nv-green: #76b900;
+      --nv-green-hover: #84d100;
+    }
+
+    .nv {
+      font-family: 'Barlow', system-ui, -apple-system, sans-serif;
+      background: var(--nv-black);
+      color: var(--nv-white);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .nv * { box-sizing: border-box; }
+    .nv *::-webkit-scrollbar { width: 4px; height: 4px; }
+    .nv *::-webkit-scrollbar-track { background: transparent; }
+    .nv *::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+    .nv .mono { font-family: 'JetBrains Mono', monospace; }
+    .nv .condensed { font-family: 'Barlow Condensed', 'Barlow', sans-serif; }
+
+    @keyframes nv-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes nv-in { from { opacity: 0; } to { opacity: 1; } }
+    .nv-up { animation: nv-up 0.4s ease both; }
+    .nv-in { animation: nv-in 0.3s ease both; }
+  `;
+  document.head.appendChild(s);
 };
+
+// ─── HELPERS ───────────────────────────────────────────────────────────────────
+
+const fmt = n => n >= 1000 ? `${(n/1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
 
 // ─── COMPONENTS ────────────────────────────────────────────────────────────────
 
-function Badge({ type, children }) {
-  const styles = {
-    certified: "bg-amber-100 text-amber-800 border border-amber-300",
-    validated: "bg-green-100 text-green-800 border border-green-300",
-    core: "bg-blue-100 text-blue-800 border border-blue-300",
-    verified: "bg-purple-100 text-purple-800 border border-purple-300",
-    community: "bg-gray-100 text-gray-600 border border-gray-300",
-    active: "bg-green-100 text-green-700 border border-green-300",
-    domain: "bg-slate-100 text-slate-700 border border-slate-200",
-    tag: "bg-slate-50 text-slate-500 border border-slate-200",
-  };
-  return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${styles[type] || styles.community}`}>
-      {children}
-    </span>
-  );
-}
-
-function ScoreRing({ score, size = 40 }) {
-  const radius = (size - 6) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const color = score >= 90 ? "#22c55e" : score >= 80 ? "#3b82f6" : score >= 70 ? "#f59e0b" : "#ef4444";
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="3" />
-        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth="3"
-          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold" style={{ color }}>{score}</span>
-    </div>
-  );
-}
-
-function MetricPill({ icon: Icon, value, label }) {
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-slate-500">
-      <Icon size={12} className="text-slate-400" />
-      <span className="font-semibold text-slate-700">{value}</span>
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function SkillCard({ skill, onClick }) {
+function SkillCard({ skill, onClick, delay = 0 }) {
   const domain = DOMAINS.find(d => d.id === skill.domain);
-  const fmt = n => n >= 1000 ? `${(n/1000).toFixed(1)}k` : n;
   return (
-    <div onClick={() => onClick(skill)} className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 hover:shadow-lg transition-all cursor-pointer group">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <ScoreRing score={skill.hubScore} />
-          <div>
-            <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors text-sm leading-tight">{skill.displayName}</h3>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-xs text-slate-400">by</span>
-              <span className="text-xs font-medium text-slate-600">{skill.author.name}</span>
-              {skill.author.tier === "core" && <Badge type="core">Core</Badge>}
-              {skill.author.tier === "certified" && <Badge type="certified">Certified</Badge>}
-              {skill.author.tier === "verified" && <Badge type="verified">Verified</Badge>}
-            </div>
-          </div>
+    <div
+      onClick={() => onClick(skill)}
+      className="nv-up"
+      style={{
+        animationDelay: `${delay}ms`,
+        background: "var(--nv-card)",
+        border: "1px solid var(--nv-border-subtle)",
+        borderRadius: 4,
+        padding: "24px",
+        cursor: "pointer",
+        transition: "border-color 0.2s, background 0.2s",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--nv-border)"; e.currentTarget.style.background = "#151515"; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--nv-border-subtle)"; e.currentTarget.style.background = "var(--nv-card)"; }}
+    >
+      {/* Top: Score + Name */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 12 }}>
+        <span className="condensed" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1, color: skill.hubScore >= 90 ? "var(--nv-green)" : skill.hubScore >= 80 ? "var(--nv-gray-200)" : "var(--nv-gray-400)", minWidth: 36 }}>
+          {skill.hubScore}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3, marginBottom: 4 }}>{skill.displayName}</div>
+          <div className="mono" style={{ fontSize: 11, color: "var(--nv-gray-500)" }}>{skill.name} <span style={{ color: "var(--nv-gray-600)" }}>v{skill.version}</span></div>
         </div>
-        <div className="flex items-center gap-1">
+      </div>
+
+      {/* Description */}
+      <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--nv-gray-400)", marginBottom: 16, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+        {skill.description}
+      </p>
+
+      {/* Bottom row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <span className="mono" style={{ fontSize: 11, color: "var(--nv-gray-500)" }}>
+            <Star size={10} style={{ display: "inline", verticalAlign: -1, marginRight: 3, color: "var(--nv-gray-400)" }} />
+            {skill.rating}
+          </span>
+          <span className="mono" style={{ fontSize: 11, color: "var(--nv-gray-500)" }}>
+            <Download size={10} style={{ display: "inline", verticalAlign: -1, marginRight: 3 }} />
+            {fmt(skill.downloads)}
+          </span>
+          <span className="mono" style={{ fontSize: 11, color: "var(--nv-gray-500)" }}>
+            {skill.activeDeployments} live
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {skill.certifiedBadge && (
-            <div className="w-6 h-6 rounded-full bg-amber-50 flex items-center justify-center" title="NVIDIA Certified">
-              <Award size={13} className="text-amber-600" />
-            </div>
+            <span className="mono" style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--nv-green)", padding: "2px 6px", border: "1px solid rgba(118,185,0,0.25)", borderRadius: 2 }}>
+              Certified
+            </span>
           )}
-          {skill.validationBadge && (
-            <div className="w-6 h-6 rounded-full bg-green-50 flex items-center justify-center" title="Sim Validated">
-              <CheckCircle size={13} className="text-green-600" />
-            </div>
-          )}
+          <span style={{ fontSize: 12, fontWeight: 500, color: "var(--nv-gray-500)" }}>{domain?.label}</span>
         </div>
-      </div>
-
-      <p className="text-xs text-slate-500 leading-relaxed mb-3 line-clamp-2">{skill.description}</p>
-
-      <div className="flex items-center gap-3 mb-3">
-        <div className="flex items-center gap-1">
-          <Star size={12} className="text-amber-400 fill-amber-400" />
-          <span className="text-xs font-semibold text-slate-700">{skill.rating}</span>
-          <span className="text-xs text-slate-400">({skill.reviewCount})</span>
-        </div>
-        <MetricPill icon={Download} value={fmt(skill.downloads)} label="" />
-        <MetricPill icon={Users} value={skill.activeDeployments} label="active" />
-      </div>
-
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <Badge type="domain">{domain?.icon} {domain?.label}</Badge>
-        {skill.tags.slice(0, 2).map(t => <Badge key={t} type="tag">{t}</Badge>)}
-        {skill.tags.length > 2 && <span className="text-xs text-slate-400">+{skill.tags.length - 2}</span>}
       </div>
     </div>
   );
@@ -287,120 +149,116 @@ function SkillCard({ skill, onClick }) {
 
 function SkillDetail({ skill, onBack }) {
   const domain = DOMAINS.find(d => d.id === skill.domain);
-  const fmt = n => n >= 1000 ? `${(n/1000).toFixed(1)}k` : n;
   return (
-    <div className="max-w-4xl mx-auto">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 mb-6 transition-colors">
-        <ArrowLeft size={16} /> Back to skills
+    <div className="nv-in" style={{ maxWidth: 800, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--nv-gray-500)", fontSize: 13, cursor: "pointer", padding: 0, marginBottom: 32 }}>
+        <ArrowLeft size={14} /> Back
       </button>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-8">
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-start gap-4">
-            <ScoreRing score={skill.hubScore} size={56} />
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">{skill.displayName}</h1>
-              <div className="flex items-center gap-2 mt-1.5">
-                <code className="text-sm text-slate-400 bg-slate-50 px-2 py-0.5 rounded">{skill.name}</code>
-                <span className="text-sm text-slate-400">v{skill.version}</span>
-                <Badge type={skill.maintenanceStatus}>{skill.maintenanceStatus}</Badge>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white text-xs font-bold">{skill.author.avatar}</div>
-                <span className="text-sm font-medium text-slate-700">{skill.author.name}</span>
-                <span className="text-sm text-slate-400">{skill.author.org}</span>
-                <Badge type={skill.author.tier}>{skill.author.tier}</Badge>
-              </div>
+      <div style={{ marginBottom: 40 }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 20, marginBottom: 24 }}>
+          <span className="condensed" style={{ fontSize: 48, fontWeight: 700, lineHeight: 1, color: skill.hubScore >= 90 ? "var(--nv-green)" : "var(--nv-gray-200)" }}>
+            {skill.hubScore}
+          </span>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2, marginBottom: 8 }}>{skill.displayName}</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <code className="mono" style={{ fontSize: 12, color: "var(--nv-gray-500)" }}>{skill.name}</code>
+              <span className="mono" style={{ fontSize: 12, color: "var(--nv-gray-600)" }}>v{skill.version}</span>
+              <span style={{ fontSize: 13, color: "var(--nv-gray-400)" }}>{skill.author.name} / {skill.author.org}</span>
+              {skill.certifiedBadge && (
+                <span className="mono" style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--nv-green)", padding: "2px 6px", border: "1px solid rgba(118,185,0,0.25)", borderRadius: 2 }}>
+                  Certified
+                </span>
+              )}
+              {skill.validationBadge && (
+                <span className="mono" style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--nv-gray-400)", padding: "2px 6px", border: "1px solid var(--nv-border)", borderRadius: 2 }}>
+                  Sim Validated
+                </span>
+              )}
             </div>
-          </div>
-          <div className="flex gap-2">
-            {skill.certifiedBadge && <Badge type="certified"><Award size={11} /> NVIDIA Certified</Badge>}
-            {skill.validationBadge && <Badge type="validated"><CheckCircle size={11} /> Sim Validated</Badge>}
           </div>
         </div>
 
-        <p className="text-slate-600 leading-relaxed mb-6">{skill.description}</p>
+        <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--nv-gray-400)", maxWidth: 640, marginBottom: 32 }}>
+          {skill.description}
+        </p>
 
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        {/* Metrics row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, background: "var(--nv-border-subtle)", borderRadius: 4, overflow: "hidden", marginBottom: 32 }}>
           {[
-            { icon: Download, label: "Downloads", value: fmt(skill.downloads), sub: `${fmt(skill.downloads30d)} last 30d` },
-            { icon: Users, label: "Active Deployments", value: skill.activeDeployments.toLocaleString(), sub: `${Math.round(skill.workflowCompletions * 100)}% success rate` },
-            { icon: Star, label: "Rating", value: skill.rating, sub: `${skill.reviewCount} reviews` },
-            { icon: GitFork, label: "Ecosystem", value: `${skill.dependents} dependents`, sub: `${skill.contributors} contributors` },
-          ].map((m, i) => (
-            <div key={i} className="bg-slate-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <m.icon size={14} className="text-slate-400" />
-                <span className="text-xs text-slate-500">{m.label}</span>
-              </div>
-              <div className="text-xl font-bold text-slate-900">{m.value}</div>
-              <div className="text-xs text-slate-400 mt-0.5">{m.sub}</div>
+            { label: "Downloads", value: fmt(skill.downloads), sub: `${fmt(skill.downloads30d)} / 30d` },
+            { label: "Deployments", value: String(skill.activeDeployments), sub: `${Math.round(skill.workflowCompletions * 100)}% success` },
+            { label: "Rating", value: String(skill.rating), sub: `${skill.reviewCount} reviews` },
+            { label: "Dependents", value: String(skill.dependents), sub: `${skill.contributors} contributors` },
+          ].map(m => (
+            <div key={m.label} style={{ background: "var(--nv-card)", padding: "20px 24px" }}>
+              <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 8 }}>{m.label}</div>
+              <div className="condensed" style={{ fontSize: 24, fontWeight: 700, lineHeight: 1 }}>{m.value}</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--nv-gray-500)", marginTop: 4 }}>{m.sub}</div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-6 mb-6">
+        {/* Compatibility + Tags */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, marginBottom: 32 }}>
           <div>
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">Classification</h3>
-            <div className="flex flex-wrap gap-1.5">
-              <Badge type="domain">{domain?.icon} {domain?.label}</Badge>
-              {skill.tags.map(t => <Badge key={t} type="tag">{t}</Badge>)}
+            <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 12 }}>Compatibility</div>
+            <div className="mono" style={{ fontSize: 12, lineHeight: 2, color: "var(--nv-gray-400)" }}>
+              <div>Isaac SDK <span style={{ color: "var(--nv-green)" }}>{skill.compatibility.isaac_sdk}</span></div>
+              {skill.compatibility.ros.length > 0 && <div>ROS 2 <span style={{ color: "var(--nv-gray-200)" }}>{skill.compatibility.ros.join(", ")}</span></div>}
+              <div>Platforms <span style={{ color: "var(--nv-gray-200)" }}>{skill.compatibility.platforms.join(", ")}</span></div>
             </div>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">Compatibility</h3>
-            <div className="space-y-1.5 text-xs text-slate-600">
-              <div><span className="text-slate-400">Isaac SDK:</span> {skill.compatibility.isaac_sdk}</div>
-              {skill.compatibility.ros.length > 0 && <div><span className="text-slate-400">ROS:</span> {skill.compatibility.ros.join(", ")}</div>}
-              <div><span className="text-slate-400">Platforms:</span> {skill.compatibility.platforms.join(", ")}</div>
+            <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 12 }}>Classification</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <span className="mono" style={{ fontSize: 11, color: "var(--nv-green)", padding: "3px 8px", border: "1px solid rgba(118,185,0,0.2)", borderRadius: 2 }}>{domain?.label}</span>
+              {skill.tags.map(t => (
+                <span key={t} className="mono" style={{ fontSize: 11, color: "var(--nv-gray-500)", padding: "3px 8px", border: "1px solid var(--nv-border)", borderRadius: 2 }}>{t}</span>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
-          <div className="flex items-center gap-4 text-xs text-slate-400">
+        {/* Divider */}
+        <div style={{ height: 1, background: "var(--nv-border-subtle)", marginBottom: 24 }} />
+
+        {/* Install + metadata */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 24 }}>
+          <div>
+            <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 12 }}>Install</div>
+            <div className="mono" style={{ fontSize: 12, padding: "16px 20px", background: "var(--nv-card)", border: "1px solid var(--nv-border-subtle)", borderRadius: 4, lineHeight: 2 }}>
+              <div><span style={{ color: "var(--nv-green)" }}>$</span> isaac-hub install {skill.name}</div>
+              <div style={{ color: "var(--nv-gray-600)" }}># or add to workflow</div>
+              <div><span style={{ color: "var(--nv-green)" }}>$</span> isaac-hub add {skill.name} --workflow my-pipeline</div>
+            </div>
+          </div>
+          <div>
+            <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 12 }}>Structure</div>
+            <div className="mono" style={{ fontSize: 12, padding: "16px 20px", background: "var(--nv-card)", border: "1px solid var(--nv-border-subtle)", borderRadius: 4, lineHeight: 2 }}>
+              <div style={{ color: "var(--nv-green)" }}>{skill.name}/</div>
+              <div style={{ color: "var(--nv-gray-500)" }}>{"\u251C"} SKILL.md</div>
+              <div style={{ color: "var(--nv-gray-600)" }}>{"\u251C"} scripts/ {"\u251C"} tests/</div>
+              <div style={{ color: "var(--nv-gray-600)" }}>{"\u2514"} examples/ references/</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="mono" style={{ fontSize: 11, color: "var(--nv-gray-600)", display: "flex", gap: 16 }}>
             <span>Published {skill.publishedAt}</span>
             <span>Updated {skill.updatedAt}</span>
             <span>{skill.license}</span>
           </div>
-          <div className="flex gap-2">
-            <button className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors flex items-center gap-1.5">
-              <BookOpen size={14} /> Docs
-            </button>
-            <button className="px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors flex items-center gap-1.5">
-              <Download size={14} /> Install
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><Terminal size={14} /> Quick Install</h3>
-          <div className="bg-slate-900 text-green-400 rounded-lg p-4 font-mono text-sm">
-            <div className="text-slate-500"># Install via CLI</div>
-            <div>$ isaac-hub install {skill.name}</div>
-            <div className="mt-2 text-slate-500"># Or add to your workflow</div>
-            <div>$ isaac-hub add {skill.name} --workflow my-pipeline</div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><Github size={14} /> Source & Standard</h3>
-          <div className="space-y-2.5">
-            <a href={`https://github.com/nvidia/isaac-skill-hub/tree/main/skills/${skill.domain}/${skill.name}`} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium">
-              <Code size={14} /> View SKILL.md on GitHub
-            </a>
-            <div className="text-xs text-slate-400">Format: Anthropic Skill Standard + Isaac Extensions</div>
-            <div className="bg-slate-50 rounded-lg p-3 font-mono text-xs text-slate-600">
-              <div>{skill.name}/</div>
-              <div className="text-slate-400">├── SKILL.md</div>
-              <div className="text-slate-400">├── LICENSE.txt</div>
-              <div className="text-slate-400">├── scripts/</div>
-              <div className="text-slate-400">├── tests/</div>
-              <div className="text-slate-400">├── examples/</div>
-              <div className="text-slate-400">└── references/</div>
-            </div>
-          </div>
+          <button style={{ background: "var(--nv-green)", color: "#000", border: "none", borderRadius: 4, padding: "10px 28px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "background 0.2s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--nv-green-hover)"}
+            onMouseLeave={e => e.currentTarget.style.background = "var(--nv-green)"}
+          >
+            <Download size={14} style={{ display: "inline", verticalAlign: -2, marginRight: 6 }} />
+            Install
+          </button>
         </div>
       </div>
     </div>
@@ -409,128 +267,469 @@ function SkillDetail({ skill, onBack }) {
 
 function ContributePage({ onBack }) {
   return (
-    <div className="max-w-3xl mx-auto">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 mb-6 transition-colors">
-        <ArrowLeft size={16} /> Back
+    <div className="nv-in" style={{ maxWidth: 640, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--nv-gray-500)", fontSize: 13, cursor: "pointer", padding: 0, marginBottom: 40 }}>
+        <ArrowLeft size={14} /> Back
       </button>
-      <div className="bg-white rounded-xl border border-slate-200 p-8">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Plus size={28} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">Contribute a Skill</h1>
-          <p className="text-slate-500 mt-2 max-w-lg mx-auto">Share your robotics expertise with the Isaac community. Skills are packaged using the open Isaac Skill Standard and reviewed for quality before publication.</p>
-        </div>
 
-        <div className="space-y-6">
-          {[
-            { step: "1", title: "Create your SKILL.md", desc: "Scaffold a skill directory with SKILL.md (Anthropic format + Isaac extensions), LICENSE.txt, and scripts/. The SKILL.md frontmatter defines your interfaces, parameters, and compatibility.", code: "isaac-hub init my-skill" },
-            { step: "2", title: "Add tests & documentation", desc: "Include unit tests, sim tests (optional), examples, and reference docs. Your HubScore depends on these. Follow the progressive disclosure pattern.", code: "isaac-hub validate ./my-skill" },
-            { step: "3", title: "Submit via GitHub PR", desc: "Fork the repo, add your skill to skills/<domain>/, and open a PR. Automated checks run on CI. Certified contributors get fast-tracked review.", code: "git push origin add-my-skill && gh pr create" },
-          ].map(s => (
-            <div key={s.step} className="flex gap-4 items-start">
-              <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">{s.step}</div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900 text-sm">{s.title}</h3>
-                <p className="text-xs text-slate-500 mt-1">{s.desc}</p>
-                <div className="bg-slate-900 text-green-400 rounded-lg px-4 py-2.5 font-mono text-xs mt-2.5">$ {s.code}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+      <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 12 }}>Contribute a Skill</h1>
+      <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--nv-gray-400)", marginBottom: 48, maxWidth: 480 }}>
+        Share your robotics expertise. Skills use the open Isaac Skill Standard and are reviewed before publication.
+      </p>
 
-        <div className="mt-8 border-t border-slate-100 pt-6 mb-6">
-          <h3 className="font-semibold text-slate-900 text-sm mb-3">SKILL.md Format (Anthropic Standard)</h3>
-          <p className="text-xs text-slate-500 mb-3">Every skill is a directory with a SKILL.md at its root. The format extends Anthropic's skill standard with typed I/O, hardware compatibility, and sim validation.</p>
-          <div className="bg-slate-900 rounded-lg p-4 font-mono text-xs text-slate-300 overflow-x-auto">
-            <div className="text-green-400">---</div>
-            <div><span className="text-blue-400">name:</span> my-skill</div>
-            <div><span className="text-blue-400">version:</span> 1.0.0</div>
-            <div><span className="text-blue-400">description:</span> <span className="text-yellow-300">When should an agent use this?</span></div>
-            <div><span className="text-blue-400">license:</span> Apache-2.0</div>
-            <div><span className="text-blue-400">domain:</span> navigation</div>
-            <div><span className="text-blue-400">execution:</span></div>
-            <div>  <span className="text-blue-400">context:</span> hybrid</div>
-            <div>  <span className="text-blue-400">entry_point:</span> scripts/main.py</div>
-            <div><span className="text-blue-400">inputs:</span> <span className="text-slate-500"># Typed I/O (ROS msg types)</span></div>
-            <div><span className="text-blue-400">outputs:</span></div>
-            <div><span className="text-blue-400">parameters:</span> <span className="text-slate-500"># Tunable with ranges</span></div>
-            <div><span className="text-blue-400">platforms:</span> <span className="text-slate-500"># Hardware compatibility</span></div>
-            <div><span className="text-blue-400">validation:</span> <span className="text-slate-500"># Sim test criteria</span></div>
-            <div className="text-green-400">---</div>
-            <div className="mt-1 text-slate-500"># Markdown docs follow...</div>
-          </div>
-          <div className="mt-3 flex gap-2">
-            <a href="https://github.com/nvidia/isaac-skill-hub/blob/main/standard/skill-standard-v1.md" target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium">
-              <FileText size={12} /> Full Standard Spec
-            </a>
-            <a href="https://github.com/nvidia/isaac-skill-hub/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium">
-              <BookOpen size={12} /> Contributing Guide
-            </a>
-          </div>
-        </div>
-
-        <div className="border-t border-slate-100 pt-6 mb-6">
-          <h3 className="font-semibold text-slate-900 text-sm mb-4">Contributor Tiers</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { tier: "Community", desc: "Anyone with a GitHub or NVIDIA account", badge: "community", perks: "Submit skills, rate & review" },
-              { tier: "Verified", desc: "3+ published skills, identity verified", badge: "verified", perks: "Priority review, Verified badge" },
-              { tier: "Certified", desc: "NVIDIA partner or proven track record", badge: "certified", perks: "Fast-track publishing, Certified badge" },
-              { tier: "Core", desc: "NVIDIA internal or appointed maintainers", badge: "core", perks: "Full admin, taxonomy changes" },
-            ].map(t => (
-              <div key={t.tier} className="border border-slate-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Badge type={t.badge}>{t.tier}</Badge>
-                </div>
-                <p className="text-xs text-slate-500">{t.desc}</p>
-                <p className="text-xs text-slate-400 mt-1">{t.perks}</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 40, marginBottom: 48 }}>
+        {[
+          { n: "01", title: "Scaffold", desc: "Create a skill directory with SKILL.md, LICENSE.txt, and entry point.", cmd: "isaac-hub init my-skill" },
+          { n: "02", title: "Test & document", desc: "Add unit tests, sim tests, examples, and reference docs. Your HubScore depends on coverage.", cmd: "isaac-hub validate ./my-skill" },
+          { n: "03", title: "Submit", desc: "Fork, add to skills/<domain>/, and open a PR. Automated checks run on CI.", cmd: "gh pr create" },
+        ].map(s => (
+          <div key={s.n} style={{ display: "flex", gap: 24 }}>
+            <span className="condensed" style={{ fontSize: 32, fontWeight: 700, color: "var(--nv-gray-600)", lineHeight: 1, minWidth: 36 }}>{s.n}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{s.title}</div>
+              <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--nv-gray-400)", marginBottom: 12 }}>{s.desc}</p>
+              <div className="mono" style={{ fontSize: 12, color: "var(--nv-gray-200)", padding: "10px 16px", background: "var(--nv-card)", border: "1px solid var(--nv-border-subtle)", borderRadius: 4 }}>
+                <span style={{ color: "var(--nv-green)" }}>$</span> {s.cmd}
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Leaderboard() {
-  const topContributors = [
-    { name: "Jane Chen", org: "NVIDIA", skills: 12, downloads: "45.2k", tier: "core" },
-    { name: "Maria Santos", org: "Community", skills: 8, downloads: "38.1k", tier: "verified" },
-    { name: "Vision Team", org: "NVIDIA", skills: 7, downloads: "31.5k", tier: "core" },
-    { name: "Alex Kim", org: "RoboLabs", skills: 6, downloads: "22.8k", tier: "verified" },
-    { name: "Leo Müller", org: "ETH Robotics", skills: 5, downloads: "18.3k", tier: "certified" },
-  ];
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2 mb-4"><Award size={15} className="text-amber-500" /> Top Contributors</h3>
-      <div className="space-y-3">
-        {topContributors.map((c, i) => (
-          <div key={i} className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-slate-300 w-4 text-right">{i+1}</span>
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white text-xs font-bold">
-                {c.name.split(" ").map(n=>n[0]).join("")}
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-slate-700">{c.name}</div>
-                <div className="text-xs text-slate-400">{c.org}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-500">{c.skills} skills</span>
-              <span className="text-xs text-slate-400">{c.downloads} ↓</span>
-              <Badge type={c.tier}>{c.tier}</Badge>
             </div>
           </div>
         ))}
       </div>
+
+      <div style={{ height: 1, background: "var(--nv-border-subtle)", marginBottom: 40 }} />
+
+      {/* SKILL.md format */}
+      <div style={{ marginBottom: 40 }}>
+        <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 16 }}>SKILL.md Format</div>
+        <div className="mono" style={{ fontSize: 12, lineHeight: 1.8, padding: "20px 24px", background: "var(--nv-card)", border: "1px solid var(--nv-border-subtle)", borderRadius: 4 }}>
+          <div style={{ color: "var(--nv-green)" }}>---</div>
+          <div><span style={{ color: "var(--nv-gray-400)" }}>name:</span> my-skill</div>
+          <div><span style={{ color: "var(--nv-gray-400)" }}>version:</span> 1.0.0</div>
+          <div><span style={{ color: "var(--nv-gray-400)" }}>description:</span> <span style={{ color: "var(--nv-gray-500)" }}>When should an agent use this?</span></div>
+          <div><span style={{ color: "var(--nv-gray-400)" }}>domain:</span> navigation</div>
+          <div><span style={{ color: "var(--nv-gray-400)" }}>inputs:</span> <span style={{ color: "var(--nv-gray-600)" }}># ROS msg types</span></div>
+          <div><span style={{ color: "var(--nv-gray-400)" }}>outputs:</span></div>
+          <div><span style={{ color: "var(--nv-gray-400)" }}>platforms:</span> <span style={{ color: "var(--nv-gray-600)" }}># hardware compat</span></div>
+          <div><span style={{ color: "var(--nv-gray-400)" }}>validation:</span> <span style={{ color: "var(--nv-gray-600)" }}># sim test criteria</span></div>
+          <div style={{ color: "var(--nv-green)" }}>---</div>
+        </div>
+      </div>
+
+      {/* Contributor tiers */}
+      <div>
+        <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 16 }}>Contributor Tiers</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--nv-border-subtle)", borderRadius: 4, overflow: "hidden" }}>
+          {[
+            { tier: "Community", desc: "GitHub account", perks: "Submit, rate, review" },
+            { tier: "Verified", desc: "3+ published skills", perks: "Priority review" },
+            { tier: "Certified", desc: "NVIDIA partner", perks: "Fast-track publishing" },
+            { tier: "Core", desc: "Maintainers", perks: "Full admin" },
+          ].map(t => (
+            <div key={t.tier} style={{ background: "var(--nv-card)", padding: "16px 20px" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{t.tier}</div>
+              <div style={{ fontSize: 12, color: "var(--nv-gray-500)" }}>{t.desc}</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--nv-gray-600)", marginTop: 4 }}>{t.perks}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-// ─── MAIN APP ──────────────────────────────────────────────────────────────────
+// ─── DOCS PAGE (Jon's Agent Hub Integration) ──────────────────────────────────
+
+function DocsPage({ onBack, setView }) {
+  const [activeDoc, setActiveDoc] = useState("overview");
+
+  const Section = ({ label, children }) => (
+    <div style={{ marginBottom: 40 }}>
+      <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 16 }}>{label}</div>
+      {children}
+    </div>
+  );
+
+  const CodeBlock = ({ children, green }) => (
+    <div className="mono" style={{ fontSize: 12, lineHeight: 1.8, padding: "16px 20px", background: "var(--nv-card)", border: "1px solid var(--nv-border-subtle)", borderRadius: 4, overflowX: "auto" }}>
+      {children}
+    </div>
+  );
+
+  const Line = ({ prompt, dim, green, indent }) => (
+    <div style={{ paddingLeft: indent ? 16 : 0 }}>
+      {prompt && <span style={{ color: "var(--nv-green)" }}>$ </span>}
+      {dim ? <span style={{ color: "var(--nv-gray-600)" }}>{dim}</span> : null}
+      {green ? <span style={{ color: "var(--nv-green)" }}>{green}</span> : null}
+      {!dim && !green && !prompt ? children : null}
+    </div>
+  );
+
+  const docs = {
+    overview: {
+      title: "Overview",
+      icon: <Layers size={14} />,
+      content: (
+        <div className="nv-in">
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Agent Hub Integration</h2>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--nv-gray-400)", marginBottom: 32, maxWidth: 560 }}>
+            Jon's branch adds agent-to-agent knowledge sharing via NVIDIA Agent Hub. Agents can post structured improvement reports, search prior work, and auto-register — creating a feedback loop for the skill ecosystem.
+          </p>
+
+          <Section label="What's New">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--nv-border-subtle)", borderRadius: 4, overflow: "hidden" }}>
+              {[
+                { icon: <MessageSquare size={14} />, title: "AGENTS.md", desc: "Agent behavioral protocol with /helpImprove and /searchHub commands", status: "new" },
+                { icon: <FileText size={14} />, title: "skill.md", desc: "Skill definition so agents can discover and install the hub itself", status: "new" },
+                { icon: <Shield size={14} />, title: "validate_skill.py", desc: "Python validator for SKILL.md frontmatter — checks fields, SPDX, domains, I/O types", status: "new" },
+                { icon: <BookOpen size={14} />, title: "knowledge/", desc: "5 condensed reference docs sized for agent context windows", status: "new" },
+                { icon: <Cpu size={14} />, title: ".env.template", desc: "Credential template for GitHub token and Agent Hub API key", status: "new" },
+                { icon: <Zap size={14} />, title: "curl installer", desc: "One-command setup that downloads all files + Agent Hub SDK", status: "new" },
+              ].map(item => (
+                <div key={item.title} style={{ background: "var(--nv-card)", padding: "20px 24px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ color: "var(--nv-green)" }}>{item.icon}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>{item.title}</span>
+                    <span className="mono" style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--nv-green)", padding: "2px 6px", border: "1px solid rgba(118,185,0,0.25)", borderRadius: 2 }}>
+                      {item.status}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: "var(--nv-gray-500)", lineHeight: 1.5 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section label="Architecture">
+            <CodeBlock>
+              <div style={{ color: "var(--nv-gray-400)" }}>
+                <div>Agent (Cursor / Claude Code / Claw)</div>
+                <div style={{ color: "var(--nv-gray-600)" }}>  |</div>
+                <div style={{ color: "var(--nv-gray-600)" }}>  | curl install from GitHub</div>
+                <div style={{ color: "var(--nv-gray-600)" }}>  v</div>
+                <div>Local workspace</div>
+                <div style={{ color: "var(--nv-gray-600)" }}>  ├── .cursor/skills/  <span style={{ color: "var(--nv-green)" }}>SKILL.md</span> (agent discovery)</div>
+                <div style={{ color: "var(--nv-gray-600)" }}>  ├── isaac-skill-hub/ <span style={{ color: "var(--nv-green)" }}>AGENTS.md</span> + knowledge/</div>
+                <div style={{ color: "var(--nv-gray-600)" }}>  └── nvagenthub/      <span style={{ color: "var(--nv-green)" }}>SDK client</span></div>
+                <div style={{ color: "var(--nv-gray-600)" }}>  |</div>
+                <div style={{ color: "var(--nv-gray-600)" }}>  | /helpImprove</div>
+                <div style={{ color: "var(--nv-gray-600)" }}>  v</div>
+                <div><span style={{ color: "var(--nv-green)" }}>agent-hub.nvidia.com</span> / isaac_skill_hub community</div>
+              </div>
+            </CodeBlock>
+          </Section>
+        </div>
+      ),
+    },
+
+    agents: {
+      title: "Agent Protocol",
+      icon: <MessageSquare size={14} />,
+      content: (
+        <div className="nv-in">
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>AGENTS.md</h2>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--nv-gray-400)", marginBottom: 32, maxWidth: 560 }}>
+            Defines how AI agents interact with the Skill Hub. Read by Cursor, Claude Code, and any AGENTS.md-compatible agent.
+          </p>
+
+          <Section label="Commands">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                { cmd: "/helpImprove", aliases: "/report, /retro", desc: "Analyze the session and post a structured improvement report to Agent Hub. Covers pain points, feature gaps, bugs, suggestions, and full user prompts for reproducibility.", steps: [
+                  "Ensure Agent Hub SDK is installed (auto-installs if missing)",
+                  "Connect or auto-register an agent account",
+                  "Analyze full conversation for findings",
+                  "Collect user prompts (redact secrets only)",
+                  "Post structured report to isaac_skill_hub community",
+                  "Engage with recent community posts if valuable",
+                ]},
+                { cmd: "/searchHub", aliases: null, desc: "Search Agent Hub for prior work before starting a task.", steps: null },
+              ].map(c => (
+                <div key={c.cmd} style={{ background: "var(--nv-card)", border: "1px solid var(--nv-border-subtle)", borderRadius: 4, padding: "24px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <code className="mono" style={{ fontSize: 16, fontWeight: 600, color: "var(--nv-green)" }}>{c.cmd}</code>
+                    {c.aliases && <span className="mono" style={{ fontSize: 11, color: "var(--nv-gray-600)" }}>aliases: {c.aliases}</span>}
+                  </div>
+                  <p style={{ fontSize: 13, color: "var(--nv-gray-400)", lineHeight: 1.6, marginBottom: c.steps ? 16 : 0 }}>{c.desc}</p>
+                  {c.steps && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {c.steps.map((s, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                          <span className="condensed" style={{ fontSize: 14, fontWeight: 700, color: "var(--nv-gray-600)", minWidth: 16 }}>{i + 1}</span>
+                          <span style={{ fontSize: 12, color: "var(--nv-gray-500)", lineHeight: 1.5 }}>{s}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section label="Report Sections">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, background: "var(--nv-border-subtle)", borderRadius: 4, overflow: "hidden" }}>
+              {[
+                { emoji: "Pain Points", color: "#ef4444" },
+                { emoji: "Feature Gaps", color: "#f97316" },
+                { emoji: "Bugs Encountered", color: "#eab308" },
+                { emoji: "Quality Assessment", color: "#22c55e" },
+                { emoji: "Suggestions", color: "#3b82f6" },
+                { emoji: "Workflow Notes", color: "#a855f7" },
+                { emoji: "User Prompts", color: "var(--nv-gray-400)" },
+                { emoji: "Reproducibility", color: "#06b6d4" },
+                { emoji: "Meta", color: "var(--nv-gray-500)" },
+              ].map(s => (
+                <div key={s.emoji} style={{ background: "var(--nv-card)", padding: "12px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: 1, background: s.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: "var(--nv-gray-400)" }}>{s.emoji}</span>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section label="Behavioral Guidelines">
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                "Read AGENTS.md first after install",
+                "Search before creating — check hub and Agent Hub for existing work",
+                "Be specific in reports — exact commands, error messages, file paths",
+                "Respect the standard — required fields, trigger descriptions, typed I/O",
+                "Post what you learn — even successful workflows are valuable",
+                "Protect credentials — never post API keys or tokens",
+                "Always run /helpImprove when done",
+              ].map((g, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0" }}>
+                  <span className="mono" style={{ fontSize: 10, color: "var(--nv-gray-600)", minWidth: 16 }}>{String(i + 1).padStart(2, '0')}</span>
+                  <span style={{ fontSize: 13, color: "var(--nv-gray-400)", lineHeight: 1.5 }}>{g}</span>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </div>
+      ),
+    },
+
+    validator: {
+      title: "Validator",
+      icon: <Shield size={14} />,
+      content: (
+        <div className="nv-in">
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>validate_skill.py</h2>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--nv-gray-400)", marginBottom: 32, maxWidth: 560 }}>
+            Python script that validates SKILL.md frontmatter against the Isaac Skill Standard. Run before submitting PRs.
+          </p>
+
+          <Section label="Usage">
+            <CodeBlock>
+              <div><span style={{ color: "var(--nv-green)" }}>$</span> python3 validate_skill.py example-skills/nav-slam-lidar/SKILL.md</div>
+              <div style={{ color: "var(--nv-green)", marginTop: 4 }}>OK: example-skills/nav-slam-lidar/SKILL.md</div>
+              <div style={{ marginTop: 12 }}><span style={{ color: "var(--nv-green)" }}>$</span> python3 validate_skill.py example-skills/*/SKILL.md</div>
+              <div style={{ color: "var(--nv-green)", marginTop: 4 }}>OK: example-skills/nav-slam-lidar/SKILL.md</div>
+              <div style={{ color: "var(--nv-green)" }}>OK: example-skills/grasp-6dof-transformer/SKILL.md</div>
+              <div style={{ color: "var(--nv-green)" }}>OK: example-skills/perception-yolo-ros2/SKILL.md</div>
+            </CodeBlock>
+          </Section>
+
+          <Section label="What It Checks">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--nv-border-subtle)", borderRadius: 4, overflow: "hidden" }}>
+              {[
+                { check: "YAML frontmatter", desc: "Parseable with opening/closing ---", type: "error" },
+                { check: "Required fields", desc: "name, version, description, license, domain, execution", type: "error" },
+                { check: "Domain", desc: "Must be one of 8 recognized domains", type: "error" },
+                { check: "Execution context", desc: "sim | real | hybrid", type: "error" },
+                { check: "Entry point", desc: "execution.entry_point must be specified", type: "error" },
+                { check: "Semver version", desc: "Must match X.Y.Z pattern", type: "error" },
+                { check: "Typed I/O", desc: "inputs/outputs items need name + type", type: "error" },
+                { check: "Parameters", desc: "Parameter items need name + type", type: "error" },
+                { check: "SPDX license", desc: "Warns if not in common SPDX list", type: "warn" },
+                { check: "LICENSE.txt", desc: "Warns if no license file alongside SKILL.md", type: "warn" },
+                { check: "Body length", desc: "Warns if markdown body is < 50 chars", type: "warn" },
+                { check: "PyYAML fallback", desc: "Uses simple parser if PyYAML unavailable", type: "info" },
+              ].map(c => (
+                <div key={c.check} style={{ background: "var(--nv-card)", padding: "14px 18px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                    <div style={{
+                      width: 6, height: 6, borderRadius: 1,
+                      background: c.type === "error" ? "#ef4444" : c.type === "warn" ? "#eab308" : "var(--nv-gray-600)"
+                    }} />
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>{c.check}</span>
+                  </div>
+                  <span style={{ fontSize: 11, color: "var(--nv-gray-500)" }}>{c.desc}</span>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section label="Design Notes">
+            <div style={{ fontSize: 13, color: "var(--nv-gray-400)", lineHeight: 1.7 }}>
+              <p style={{ marginBottom: 8 }}>No external dependencies required — has a built-in simple YAML parser fallback when PyYAML isn't installed. Returns exit code 1 on errors (not warnings), making it CI-friendly. Supports glob patterns for batch validation.</p>
+            </div>
+          </Section>
+        </div>
+      ),
+    },
+
+    knowledge: {
+      title: "Knowledge Docs",
+      icon: <BookOpen size={14} />,
+      content: (
+        <div className="nv-in">
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Knowledge Directory</h2>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--nv-gray-400)", marginBottom: 32, maxWidth: 560 }}>
+            Condensed reference docs designed for agent context windows. Distilled from the full specs into agent-sized summaries.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[
+              { file: "overview.md", title: "Overview", desc: "Architecture, vision, system components. What's live (specs, example skills, web UI) vs planned (CLI, API, validation pipeline). Key URLs and phased rollout timeline.", lines: 51 },
+              { file: "skill-standard.md", title: "Skill Standard", desc: "Full SKILL.md specification — required frontmatter fields, robotics extensions (typed I/O, parameters, platforms, validation criteria), dependencies, and progressive disclosure body pattern.", lines: 133 },
+              { file: "contributing.md", title: "Contributing", desc: "Step-by-step contribution workflow: create directory, write SKILL.md, validate, submit PR. Contributor tiers, review process, and versioning rules.", lines: 107 },
+              { file: "agent-discovery.md", title: "Agent Discovery", desc: "How agents find skills at runtime — discovery query format, multi-signal matching formula (semantic 40%, capability 25%, platform 15%, I/O 10%, quality 10%), load sequence, and composition checking.", lines: 64 },
+              { file: "domains.md", title: "Domains", desc: "The 8 domain taxonomy with descriptions and example skills for each: Navigation, Manipulation, Perception, Data & Training, Simulation, Control, Safety, Integration.", lines: 45 },
+            ].map(doc => (
+              <div key={doc.file} style={{ background: "var(--nv-card)", border: "1px solid var(--nv-border-subtle)", borderRadius: 4, padding: "20px 24px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <FileText size={14} style={{ color: "var(--nv-green)" }} />
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>{doc.title}</span>
+                    <code className="mono" style={{ fontSize: 11, color: "var(--nv-gray-600)" }}>knowledge/{doc.file}</code>
+                  </div>
+                  <span className="mono" style={{ fontSize: 10, color: "var(--nv-gray-600)" }}>{doc.lines} lines</span>
+                </div>
+                <p style={{ fontSize: 12, color: "var(--nv-gray-500)", lineHeight: 1.6 }}>{doc.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 24, padding: "16px 20px", background: "rgba(118,185,0,0.04)", border: "1px solid rgba(118,185,0,0.15)", borderRadius: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <Zap size={13} style={{ color: "var(--nv-green)" }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--nv-green)" }}>Context window optimization</span>
+            </div>
+            <p style={{ fontSize: 12, color: "var(--nv-gray-400)", lineHeight: 1.6 }}>
+              Total: ~400 lines across 5 files. Designed to fit within agent context limits while covering all essential information. Full specs remain in the repo root for human reference.
+            </p>
+          </div>
+        </div>
+      ),
+    },
+
+    install: {
+      title: "Install Flow",
+      icon: <Terminal size={14} />,
+      content: (
+        <div className="nv-in">
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>One-Command Install</h2>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--nv-gray-400)", marginBottom: 32, maxWidth: 560 }}>
+            Agents bootstrap by curling the skill.md, which contains a single install command that sets up everything.
+          </p>
+
+          <Section label="Agent Prompt">
+            <CodeBlock>
+              <div style={{ color: "var(--nv-gray-200)" }}>Curl (not fetch) https://lingqnv.github.io/isaac-skill-hub/skill.md</div>
+              <div style={{ color: "var(--nv-gray-200)" }}>and follow the install instructions.</div>
+            </CodeBlock>
+          </Section>
+
+          <Section label="What Gets Created">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--nv-border-subtle)", borderRadius: 4, overflow: "hidden" }}>
+              {[
+                { path: ".cursor/skills/isaac-skill-hub/SKILL.md", purpose: "Skill definition for agent discovery" },
+                { path: "isaac-skill-hub/AGENTS.md", purpose: "Agent behavioral protocol" },
+                { path: "isaac-skill-hub/validate_skill.py", purpose: "Frontmatter validator" },
+                { path: "isaac-skill-hub/knowledge/*.md", purpose: "5 reference docs" },
+                { path: "isaac-skill-hub/.env.template", purpose: "Credential documentation" },
+                { path: "nvagenthub/", purpose: "Agent Hub SDK (requires VPN)" },
+                { path: ".env", purpose: "Credentials (gitignored)" },
+                { path: ".gitignore", purpose: "Updated with new patterns" },
+              ].map(f => (
+                <div key={f.path} style={{ background: "var(--nv-card)", padding: "12px 16px" }}>
+                  <code className="mono" style={{ fontSize: 11, color: "var(--nv-green)" }}>{f.path}</code>
+                  <div style={{ fontSize: 11, color: "var(--nv-gray-500)", marginTop: 2 }}>{f.purpose}</div>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section label="Credentials">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={{ background: "var(--nv-card)", border: "1px solid var(--nv-border-subtle)", borderRadius: 4, padding: "16px 20px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>GITHUB_TOKEN</span>
+                  <span className="mono" style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ef4444", padding: "2px 6px", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 2 }}>Required</span>
+                </div>
+                <p style={{ fontSize: 11, color: "var(--nv-gray-500)", lineHeight: 1.5 }}>GitHub PAT with repo scope. For browsing, PRs, and contributing.</p>
+              </div>
+              <div style={{ background: "var(--nv-card)", border: "1px solid var(--nv-border-subtle)", borderRadius: 4, padding: "16px 20px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>NVAGENT_HUB_API_KEY</span>
+                  <span className="mono" style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--nv-gray-500)", padding: "2px 6px", border: "1px solid var(--nv-border)", borderRadius: 2 }}>Auto</span>
+                </div>
+                <p style={{ fontSize: 11, color: "var(--nv-gray-500)", lineHeight: 1.5 }}>Auto-provisioned on first /helpImprove. Requires NVIDIA VPN.</p>
+              </div>
+            </div>
+          </Section>
+        </div>
+      ),
+    },
+  };
+
+  const docKeys = Object.keys(docs);
+
+  return (
+    <div className="nv-in" style={{ maxWidth: 960, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--nv-gray-500)", fontSize: 13, cursor: "pointer", padding: 0, marginBottom: 32 }}>
+        <ArrowLeft size={14} /> Back
+      </button>
+
+      <div style={{ display: "flex", gap: 40 }}>
+        {/* Sidebar nav */}
+        <div style={{ width: 180, flexShrink: 0 }}>
+          <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 12 }}>
+            Jon's Branch
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {docKeys.map(key => (
+              <button
+                key={key}
+                onClick={() => setActiveDoc(key)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "8px 12px", borderRadius: 3, border: "none",
+                  background: activeDoc === key ? "rgba(118,185,0,0.08)" : "transparent",
+                  color: activeDoc === key ? "var(--nv-green)" : "var(--nv-gray-500)",
+                  fontSize: 13, fontWeight: 500, cursor: "pointer",
+                  transition: "all 0.15s", textAlign: "left", width: "100%",
+                }}
+              >
+                {docs[key].icon}
+                {docs[key].title}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ height: 1, background: "var(--nv-border-subtle)", margin: "16px 0" }} />
+
+          <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginBottom: 8 }}>
+            Branch Info
+          </div>
+          <div className="mono" style={{ fontSize: 11, color: "var(--nv-gray-500)", lineHeight: 2 }}>
+            <div><span style={{ color: "var(--nv-gray-600)" }}>branch</span> jon/agent-hub-integration</div>
+            <div><span style={{ color: "var(--nv-gray-600)" }}>commits</span> 3</div>
+            <div><span style={{ color: "var(--nv-gray-600)" }}>files</span> +10</div>
+            <div><span style={{ color: "var(--nv-gray-600)" }}>lines</span> +1,083</div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {docs[activeDoc].content}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN ──────────────────────────────────────────────────────────────────────
 
 export default function IsaacSkillHub() {
   const [view, setView] = useState("home");
@@ -538,9 +737,8 @@ export default function IsaacSkillHub() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDomain, setSelectedDomain] = useState(null);
   const [sortBy, setSortBy] = useState("hubScore");
-  const [showFilters, setShowFilters] = useState(false);
-  const [minRating, setMinRating] = useState(0);
-  const [certifiedOnly, setCertifiedOnly] = useState(false);
+
+  useEffect(() => { injectStyles(); }, []);
 
   const filteredSkills = useMemo(() => {
     let result = [...SKILLS];
@@ -554,8 +752,6 @@ export default function IsaacSkillHub() {
       );
     }
     if (selectedDomain) result = result.filter(s => s.domain === selectedDomain);
-    if (minRating > 0) result = result.filter(s => s.rating >= minRating);
-    if (certifiedOnly) result = result.filter(s => s.certifiedBadge);
     result.sort((a, b) => {
       if (sortBy === "hubScore") return b.hubScore - a.hubScore;
       if (sortBy === "downloads") return b.downloads - a.downloads;
@@ -564,217 +760,226 @@ export default function IsaacSkillHub() {
       return 0;
     });
     return result;
-  }, [searchQuery, selectedDomain, sortBy, minRating, certifiedOnly]);
+  }, [searchQuery, selectedDomain, sortBy]);
 
   const handleSkillClick = useCallback((skill) => {
     setSelectedSkill(skill);
     setView("detail");
+    window.scrollTo(0, 0);
   }, []);
 
+  const nav = (
+    <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--nv-border-subtle)" }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => { setView("home"); setSelectedSkill(null); }}>
+          <div style={{ width: 28, height: 28, background: "var(--nv-green)", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Box size={14} color="#000" />
+          </div>
+          <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>Isaac Skill Hub</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <button onClick={() => setView("docs")} style={{ background: "none", border: "none", color: "var(--nv-gray-400)", fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--nv-white)"}
+            onMouseLeave={e => e.currentTarget.style.color = "var(--nv-gray-400)"}
+          >Docs</button>
+          <button onClick={() => setView("contribute")} style={{ background: "none", border: "none", color: "var(--nv-gray-400)", fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--nv-white)"}
+            onMouseLeave={e => e.currentTarget.style.color = "var(--nv-gray-400)"}
+          >Contribute</button>
+          <a href="https://github.com/lingqnv/isaac-skill-hub" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--nv-gray-400)", fontSize: 13, fontWeight: 500, textDecoration: "none", transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--nv-white)"}
+            onMouseLeave={e => e.currentTarget.style.color = "var(--nv-gray-400)"}
+          ><Github size={15} /> GitHub</a>
+          <button style={{ background: "var(--nv-green)", color: "#000", border: "none", borderRadius: 3, padding: "7px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "background 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--nv-green-hover)"}
+            onMouseLeave={e => e.currentTarget.style.background = "var(--nv-green)"}
+          >Sign In</button>
+        </div>
+      </div>
+    </nav>
+  );
+
+  // Detail
   if (view === "detail" && selectedSkill) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <nav className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView("home")}>
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-              <Package size={16} className="text-white" />
-            </div>
-            <span className="font-bold text-slate-900">Isaac Skill Hub</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Alpha</span>
-          </div>
-        </nav>
-        <div className="p-6">
+      <div className="nv">
+        {nav}
+        <div style={{ padding: "40px 32px" }}>
           <SkillDetail skill={selectedSkill} onBack={() => setView("home")} />
         </div>
       </div>
     );
   }
 
+  // Docs
+  if (view === "docs") {
+    return (
+      <div className="nv">
+        {nav}
+        <div style={{ padding: "40px 32px" }}>
+          <DocsPage onBack={() => setView("home")} setView={setView} />
+        </div>
+      </div>
+    );
+  }
+
+  // Contribute
   if (view === "contribute") {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <nav className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView("home")}>
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-              <Package size={16} className="text-white" />
-            </div>
-            <span className="font-bold text-slate-900">Isaac Skill Hub</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Alpha</span>
-          </div>
-        </nav>
-        <div className="p-6">
+      <div className="nv">
+        {nav}
+        <div style={{ padding: "40px 32px" }}>
           <ContributePage onBack={() => setView("home")} />
         </div>
       </div>
     );
   }
 
+  // Home
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Nav */}
-      <nav className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-            <Package size={16} className="text-white" />
-          </div>
-          <span className="font-bold text-slate-900">Isaac Skill Hub</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Alpha</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="text-sm text-slate-600 hover:text-slate-900 transition-colors font-medium">Skills</button>
-          <button className="text-sm text-slate-600 hover:text-slate-900 transition-colors font-medium">Collections</button>
-          <button className="text-sm text-slate-600 hover:text-slate-900 transition-colors font-medium" onClick={() => setView("contribute")}>Contribute</button>
-          <button className="text-sm text-slate-600 hover:text-slate-900 transition-colors font-medium">Docs</button>
-          <a href="https://github.com/nvidia/isaac-skill-hub" target="_blank" rel="noopener" className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors font-medium"><Github size={16} /> GitHub</a>
-          <button className="px-4 py-1.5 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">Sign In</button>
-        </div>
-      </nav>
+    <div className="nv">
+      {nav}
 
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white px-6 py-16">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-bold mb-3">The Open Registry for Robotics Skills</h1>
-          <p className="text-slate-400 text-lg mb-3 max-w-2xl mx-auto">Discover, share, and deploy modular robotic capabilities. Built on the Anthropic Skill Standard — extended for physical AI.</p>
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <a href="https://github.com/nvidia/isaac-skill-hub" target="_blank" rel="noopener" className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-sm text-white font-medium transition-colors">
-              <Github size={16} /> Star on GitHub
-            </a>
-            <span className="text-slate-500 text-xs">Apache 2.0 · Based on Anthropic Skill Format</span>
-          </div>
-          <div className="relative max-w-xl mx-auto mb-8">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* Hero — minimal */}
+      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 32px 64px" }}>
+        <div className="nv-up">
+          <h1 style={{ fontSize: 48, fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 16, maxWidth: 560 }}>
+            The Open Registry for Robotics Skills
+          </h1>
+          <p style={{ fontSize: 16, lineHeight: 1.6, color: "var(--nv-gray-400)", marginBottom: 40, maxWidth: 460 }}>
+            Discover, share, and deploy modular robotic capabilities. Built on the Anthropic Skill Standard.
+          </p>
+        </div>
+
+        {/* Search */}
+        <div className="nv-up" style={{ animationDelay: "80ms", maxWidth: 520, marginBottom: 48 }}>
+          <div style={{ position: "relative" }}>
+            <Search size={16} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--nv-gray-600)" }} />
             <input
               type="text"
-              placeholder="Search skills... (e.g., SLAM, grasp planning, sim-to-real)"
+              placeholder="Search skills..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3.5 bg-white text-slate-900 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="mono"
+              style={{
+                width: "100%",
+                padding: "14px 16px 14px 44px",
+                fontSize: 13,
+                background: "var(--nv-card)",
+                border: "1px solid var(--nv-border)",
+                borderRadius: 4,
+                color: "var(--nv-white)",
+                outline: "none",
+                transition: "border-color 0.2s",
+              }}
+              onFocus={e => e.currentTarget.style.borderColor = "var(--nv-green)"}
+              onBlur={e => e.currentTarget.style.borderColor = "var(--nv-border)"}
             />
           </div>
-          <div className="flex items-center justify-center gap-8 text-sm">
-            {Object.entries(STATS).map(([k, v]) => (
-              <div key={k} className="text-center">
-                <div className="text-2xl font-bold text-white">{v}</div>
-                <div className="text-slate-400 capitalize">{k.replace(/([A-Z])/g, ' $1').trim()}</div>
-              </div>
-            ))}
-          </div>
         </div>
-      </div>
 
-      {/* Domain Chips */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3">
-        <div className="max-w-6xl mx-auto flex items-center gap-2 overflow-x-auto">
-          <button
-            onClick={() => setSelectedDomain(null)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${!selectedDomain ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-          >All Domains</button>
-          {DOMAINS.map(d => (
-            <button key={d.id}
-              onClick={() => setSelectedDomain(selectedDomain === d.id ? null : d.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${selectedDomain === d.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-            >{d.icon} {d.label}</button>
+        {/* Stats */}
+        <div className="nv-up" style={{ animationDelay: "160ms", display: "flex", gap: 48, marginBottom: 64 }}>
+          {[
+            { label: "Skills", value: "247" },
+            { label: "Contributors", value: "89" },
+            { label: "Downloads", value: "1.2M" },
+            { label: "Organizations", value: "34" },
+          ].map(s => (
+            <div key={s.label}>
+              <div className="condensed" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1, color: "var(--nv-green)" }}>{s.value}</div>
+              <div className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)", marginTop: 4 }}>{s.label}</div>
+            </div>
           ))}
         </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: "var(--nv-border-subtle)", marginBottom: 32 }} />
+
+        {/* Filters row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, overflowX: "auto" }}>
+            <button
+              onClick={() => setSelectedDomain(null)}
+              className="mono"
+              style={{
+                padding: "6px 14px",
+                fontSize: 11,
+                border: `1px solid ${!selectedDomain ? "var(--nv-green)" : "var(--nv-border)"}`,
+                borderRadius: 3,
+                background: !selectedDomain ? "rgba(118,185,0,0.08)" : "transparent",
+                color: !selectedDomain ? "var(--nv-green)" : "var(--nv-gray-500)",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "all 0.15s",
+              }}
+            >All</button>
+            {DOMAINS.map(d => (
+              <button key={d.id}
+                onClick={() => setSelectedDomain(selectedDomain === d.id ? null : d.id)}
+                className="mono"
+                style={{
+                  padding: "6px 14px",
+                  fontSize: 11,
+                  border: `1px solid ${selectedDomain === d.id ? "var(--nv-green)" : "var(--nv-border)"}`,
+                  borderRadius: 3,
+                  background: selectedDomain === d.id ? "rgba(118,185,0,0.08)" : "transparent",
+                  color: selectedDomain === d.id ? "var(--nv-green)" : "var(--nv-gray-500)",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.15s",
+                }}
+              >{d.label}</button>
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="mono" style={{ fontSize: 11, color: "var(--nv-gray-600)" }}>{filteredSkills.length} results</span>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="mono"
+              style={{
+                fontSize: 11,
+                padding: "6px 10px",
+                background: "var(--nv-card)",
+                border: "1px solid var(--nv-border)",
+                borderRadius: 3,
+                color: "var(--nv-gray-400)",
+                cursor: "pointer",
+                outline: "none",
+              }}
+            >
+              <option value="hubScore">Score</option>
+              <option value="downloads">Downloads</option>
+              <option value="rating">Rating</option>
+              <option value="recent">Updated</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {filteredSkills.map((skill, i) => (
+            <SkillCard key={skill.id} skill={skill} onClick={handleSkillClick} delay={i * 30} />
+          ))}
+        </div>
+
+        {filteredSkills.length === 0 && (
+          <div className="nv-in" style={{ textAlign: "center", padding: "80px 0" }}>
+            <p style={{ fontSize: 15, color: "var(--nv-gray-500)" }}>No skills match your search.</p>
+          </div>
+        )}
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="flex gap-6">
-          {/* Skills Grid */}
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <h2 className="font-semibold text-slate-900">{filteredSkills.length} skills</h2>
-                {selectedDomain && (
-                  <button onClick={() => setSelectedDomain(null)} className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 bg-slate-100 px-2 py-1 rounded-full">
-                    <X size={11} /> Clear filter
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${showFilters ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                  <Filter size={12} /> Filters
-                </button>
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 text-slate-600 bg-white">
-                  <option value="hubScore">Hub Score</option>
-                  <option value="downloads">Downloads</option>
-                  <option value="rating">Rating</option>
-                  <option value="recent">Recently Updated</option>
-                </select>
-              </div>
-            </div>
-
-            {showFilters && (
-              <div className="bg-white border border-slate-200 rounded-lg p-4 mb-4 flex items-center gap-6">
-                <label className="flex items-center gap-2 text-xs text-slate-600">
-                  <span>Min Rating:</span>
-                  <select value={minRating} onChange={e => setMinRating(Number(e.target.value))} className="border border-slate-200 rounded px-2 py-1 text-xs">
-                    <option value={0}>Any</option>
-                    <option value={4}>4+</option>
-                    <option value={4.5}>4.5+</option>
-                  </select>
-                </label>
-                <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-                  <input type="checkbox" checked={certifiedOnly} onChange={e => setCertifiedOnly(e.target.checked)} className="rounded" />
-                  NVIDIA Certified only
-                </label>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              {filteredSkills.map(skill => (
-                <SkillCard key={skill.id} skill={skill} onClick={handleSkillClick} />
-              ))}
-            </div>
-
-            {filteredSkills.length === 0 && (
-              <div className="text-center py-16 text-slate-400">
-                <Search size={40} className="mx-auto mb-3 opacity-50" />
-                <p className="font-medium">No skills match your search</p>
-                <p className="text-sm mt-1">Try different keywords or clear your filters</p>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="w-72 flex-shrink-0 space-y-6">
-            <Leaderboard />
-
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2 mb-3"><Zap size={15} className="text-green-500" /> Curated Collections</h3>
-              <div className="space-y-2.5">
-                {COLLECTIONS.map(c => (
-                  <div key={c.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
-                    <span className="text-lg">{c.icon}</span>
-                    <div className="flex-1">
-                      <div className="text-xs font-medium text-slate-700">{c.name}</div>
-                      <div className="text-xs text-slate-400">{c.skillCount} skills</div>
-                    </div>
-                    <ArrowUpRight size={12} className="text-slate-300" />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-5 text-white">
-              <h3 className="font-semibold text-sm mb-2">Share Your Skills</h3>
-              <p className="text-green-100 text-xs leading-relaxed mb-3">The Isaac community needs your expertise. Contribute skills and help roboticists worldwide.</p>
-              <button onClick={() => setView("contribute")} className="w-full py-2 bg-white text-green-700 rounded-lg text-sm font-semibold hover:bg-green-50 transition-colors flex items-center justify-center gap-1.5">
-                <Plus size={14} /> Start Contributing
-              </button>
-            </div>
-
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2 mb-3"><BarChart3 size={15} className="text-blue-500" /> Hub Activity</h3>
-              <div className="space-y-2 text-xs text-slate-600">
-                <div className="flex justify-between"><span>New skills this week</span><span className="font-semibold text-slate-900">7</span></div>
-                <div className="flex justify-between"><span>Updates published</span><span className="font-semibold text-slate-900">23</span></div>
-                <div className="flex justify-between"><span>Reviews submitted</span><span className="font-semibold text-slate-900">41</span></div>
-                <div className="flex justify-between"><span>New contributors</span><span className="font-semibold text-slate-900">12</span></div>
-              </div>
-            </div>
-          </div>
+      {/* Footer */}
+      <div style={{ borderTop: "1px solid var(--nv-border-subtle)" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "20px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span className="mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--nv-gray-600)" }}>
+            Isaac Skill Hub
+          </span>
+          <span className="mono" style={{ fontSize: 10, color: "var(--nv-gray-600)" }}>
+            Apache 2.0 &middot; Anthropic Skill Standard
+          </span>
         </div>
       </div>
     </div>
