@@ -778,10 +778,10 @@ export default function IsaacSkillHub() {
           <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>Isaac Skill Hub</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <button onClick={() => setView("docs")} style={{ background: "none", border: "none", color: "var(--nv-gray-400)", fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "color 0.15s" }}
+          <a href="https://agent-hub.nvidia.com/" target="_blank" rel="noopener" style={{ color: "var(--nv-gray-400)", fontSize: 13, fontWeight: 500, textDecoration: "none", transition: "color 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.color = "var(--nv-white)"}
             onMouseLeave={e => e.currentTarget.style.color = "var(--nv-gray-400)"}
-          >Docs</button>
+          >Agent Hub</a>
           <button onClick={() => setView("contribute")} style={{ background: "none", border: "none", color: "var(--nv-gray-400)", fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "color 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.color = "var(--nv-white)"}
             onMouseLeave={e => e.currentTarget.style.color = "var(--nv-gray-400)"}
