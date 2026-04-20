@@ -1,0 +1,8 @@
+robot: unitree_go2
+policy_checkpoint: weights/locomotion_latest.pt
+control_frequency_hz: 50
+max_linear_velocity: 1.5
+terrain_aware: false
+gait_mode: trot
+action_smoothing: 0.8
+sim_to_real_adaptation: true

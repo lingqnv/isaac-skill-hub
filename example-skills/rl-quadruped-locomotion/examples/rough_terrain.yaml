@@ -1,0 +1,8 @@
+robot: unitree_go2
+policy_checkpoint: weights/rough_terrain_v2.pt
+control_frequency_hz: 100
+max_linear_velocity: 0.8
+terrain_aware: true
+gait_mode: auto
+action_smoothing: 0.9
+sim_to_real_adaptation: true
